@@ -1,0 +1,32 @@
+import { Student } from '../../types/models';
+import { APAARStatus } from '../../types/enums';
+
+export const mockStudent: Student = {
+  id: 'student-001',
+  name: 'Arjun Mehta',
+  firstName: 'Arjun',
+  lastName: 'Mehta',
+  mobile: '9876543210',
+  dob: '2009-03-15',
+  gender: 'male',
+  avatarUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Arjun',
+  class: '10',
+  section: 'A',
+  rollNumber: '10A-021',
+  schoolId: 'school-dps-vk',
+  schoolName: 'DPS Vasant Kunj',
+  board: 'CBSE',
+  udiseCode: '09040401101',
+  apaarId: 'APAAR-DL-2025-084721',
+  apaarStatus: APAARStatus.VERIFIED,
+  isMinor: true,
+  parentConsentGiven: true,
+  enrollmentDate: '2015-04-01',
+  academicYear: '2024-25',
+  interests: ['Technology', 'Science', 'Music'],
+  careerGoal: 'Software Engineer',
+  dreamCollege: 'IIT Delhi',
+  language: 'en',
+  createdAt: '2024-04-01T00:00:00Z',
+  updatedAt: '2025-01-15T00:00:00Z',
+};
