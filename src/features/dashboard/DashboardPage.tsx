@@ -3,9 +3,9 @@ import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
-  CalendarCheck, TrendingUp, Target, Award, Clock, BookOpen,
-  ArrowRight, Zap, AlertTriangle, CalendarDays, UserCheck,
-  Share2, Compass, Flame, Trophy, MapPin
+  CalendarCheck, TrendingUp, Target, Clock,
+  ArrowRight, Zap, CalendarDays,
+  Flame, Trophy, MapPin
 } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import { StatCard } from '@/components/shared/StatCard';
@@ -210,7 +210,7 @@ export default function DashboardPage() {
         />
       </motion.div>
 
-      {/* SCHEDULE + QUICK ACTIONS */}
+      {/* SCHEDULE + ANNOUNCEMENTS */}
       <motion.div variants={fadeUp} className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Today's Schedule */}
         <div className="lg:col-span-2 rounded-[20px] p-6 bg-[var(--color-surface)] border border-[var(--color-border)] shadow-[var(--shadow-sm)]">
@@ -230,80 +230,102 @@ export default function DashboardPage() {
             <Clock className="h-5 w-5 text-[var(--color-text-muted)]" />
           </div>
 
-          <div className="space-y-2">
-            {d.todayTimetable.filter(t => t.teacher).map((entry, idx) => {
-              const [sh, sm] = entry.startTime.split(':').map(Number);
-              const [eh, em] = entry.endTime.split(':').map(Number);
-              const isNow = nowMins >= sh * 60 + sm && nowMins < eh * 60 + em;
-              const isPast = nowMins >= eh * 60 + em;
-              const subColor = getSubjectColor(entry.subject);
+          {/* Timeline layout */}
+          <div className="relative">
+            {/* Vertical timeline line */}
+            <div className="absolute left-[95px] top-0 bottom-0 w-[1px] bg-[var(--color-border)]" />
+            <div className="space-y-1">
+              {d.todayTimetable.filter(t => t.teacher).map((entry, idx) => {
+                const [sh, sm] = entry.startTime.split(':').map(Number);
+                const [eh, em] = entry.endTime.split(':').map(Number);
+                const isNow = nowMins >= sh * 60 + sm && nowMins < eh * 60 + em;
+                const isPast = nowMins >= eh * 60 + em;
+                const subColor = getSubjectColor(entry.subject);
 
-              return (
-                <motion.div
-                  key={idx}
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: idx * 0.05 }}
-                  className={`flex items-center gap-3 p-3 rounded-[12px] transition-all ${
-                    isNow
-                      ? 'border'
-                      : 'hover:bg-[var(--color-surface-2)]'
-                  }`}
-                  style={isNow ? {
-                    background: `${subColor}15`,
-                    borderColor: `${subColor}40`,
-                    boxShadow: `inset 3px 0 0 ${subColor}`,
-                  } : {
-                    opacity: isPast ? 0.5 : 1,
-                  }}
-                >
-                  <div className="text-[11px] text-[var(--color-text-muted)] w-[90px] flex-shrink-0 font-medium">
-                    {entry.startTime} – {entry.endTime}
-                  </div>
-                  <div className="w-[3px] h-7 rounded-full flex-shrink-0" style={{ background: subColor }} />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[13px] font-semibold truncate" style={{ color: isNow ? subColor : 'var(--color-text)' }}>
-                      {entry.subject}
-                    </p>
-                    <p className="text-[11px] text-[var(--color-text-muted)] truncate">{entry.teacher} · {entry.room}</p>
-                  </div>
-                  {isNow && (
-                    <span className="text-[10px] font-bold px-2.5 py-1 rounded-full text-white flex-shrink-0"
-                      style={{ background: subColor }}>NOW</span>
-                  )}
-                </motion.div>
-              );
-            })}
+                return (
+                  <motion.div
+                    key={idx}
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: idx * 0.05 }}
+                    className="flex items-center gap-0"
+                    style={{ opacity: isPast && !isNow ? 0.45 : 1 }}
+                  >
+                    {/* Time column */}
+                    <div className="w-[96px] flex-shrink-0 text-right pr-4">
+                      <span className="text-[11px] font-mono font-medium text-[var(--color-text-muted)]">
+                        {entry.startTime}
+                      </span>
+                    </div>
+                    {/* Dot on timeline */}
+                    <div className="relative z-10 flex-shrink-0">
+                      {isNow ? (
+                        <div className="w-3 h-3 rounded-full border-2 border-[var(--color-success)] bg-[var(--color-success)] shadow-[0_0_0_3px_rgba(16,185,129,0.2)]" />
+                      ) : (
+                        <div className="w-2.5 h-2.5 rounded-full border-2 flex-shrink-0"
+                          style={{ borderColor: subColor, background: isPast ? subColor : 'var(--color-surface)' }} />
+                      )}
+                    </div>
+                    {/* Entry card */}
+                    <div
+                      className={`flex-1 ml-3 flex items-center gap-2.5 p-2.5 rounded-[10px] transition-all ${isNow ? 'border' : 'hover:bg-[var(--color-surface-2)]'}`}
+                      style={isNow ? {
+                        background: `${subColor}12`,
+                        borderColor: `${subColor}35`,
+                      } : {}}
+                    >
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[13px] font-semibold truncate" style={{ color: isNow ? subColor : 'var(--color-text)' }}>
+                          {entry.subject}
+                        </p>
+                        <p className="text-[11px] text-[var(--color-text-muted)] truncate">{entry.teacher} · {entry.room}</p>
+                      </div>
+                      {isNow && (
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full text-white flex-shrink-0"
+                          style={{ background: subColor }}>NOW</span>
+                      )}
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </div>
           </div>
         </div>
 
-        {/* Quick Actions */}
-        <div className="rounded-[20px] p-6 bg-[var(--color-surface)] border border-[var(--color-border)] shadow-[var(--shadow-sm)]">
-          <h2 className="text-[16px] font-bold text-[var(--color-text)] mb-5">Quick Actions</h2>
-          <div className="grid grid-cols-2 gap-3">
-            {[
-              { icon: UserCheck, label: 'Leave Request', path: ROUTES.LEAVE_REQUEST, gradient: 'linear-gradient(135deg, #6C63FF, #9C8FFF)' },
-              { icon: BookOpen, label: 'Study Planner', path: ROUTES.ACADEMICS, gradient: 'linear-gradient(135deg, #10B981, #34D399)' },
-              { icon: Share2, label: 'Share Profile', path: ROUTES.SHARING, gradient: 'linear-gradient(135deg, #F59E0B, #FCD34D)' },
-              { icon: Compass, label: 'Career Explorer', path: ROUTES.CAREER, gradient: 'linear-gradient(135deg, #EF4444, #F87171)' },
-            ].map((action, i) => (
-              <motion.button
-                key={i}
-                whileHover={{ scale: 1.04, y: -2 }}
-                whileTap={{ scale: 0.96 }}
-                onClick={() => navigate(action.path)}
-                className="flex flex-col items-center gap-2.5 p-4 rounded-[16px] transition-all group"
-                style={{ background: 'var(--color-surface-2)' }}
-                onMouseEnter={e => (e.currentTarget.style.background = `${action.gradient.includes('6C63FF') ? '#EEEDFF' : action.gradient.includes('10B981') ? '#D1FAF0' : action.gradient.includes('F59E0B') ? '#FEF3C7' : '#FEE2E2'}`)}
-                onMouseLeave={e => (e.currentTarget.style.background = 'var(--color-surface-2)')}
+        {/* Announcements */}
+        <div className="rounded-[20px] p-6 bg-[var(--color-surface)] border border-[var(--color-border)] shadow-[var(--shadow-sm)] flex flex-col">
+          <div className="flex items-center justify-between mb-5">
+            <h2 className="text-[16px] font-bold text-[var(--color-text)]">Announcements</h2>
+            <button onClick={() => navigate(ROUTES.INBOX)} className="flex items-center gap-1 text-[12px] font-semibold text-[var(--color-primary)] hover:underline">
+              All <ArrowRight className="h-3 w-3" />
+            </button>
+          </div>
+          <div className="space-y-3 flex-1">
+            {d.announcements.slice(0, 4).map(ann => (
+              <div
+                key={ann.id}
+                className="p-3 rounded-[12px] border cursor-pointer transition-all hover:shadow-[var(--shadow-sm)]"
+                style={{
+                  background: !ann.isRead ? 'var(--color-primary-light)' : 'var(--color-surface-2)',
+                  borderColor: !ann.isRead ? 'var(--color-primary)' + '30' : 'var(--color-border)',
+                }}
               >
-                <div className="w-11 h-11 rounded-[12px] flex items-center justify-center shadow-sm"
-                  style={{ background: action.gradient }}>
-                  <action.icon className="h-5 w-5 text-white" />
+                <div className="flex items-start gap-2">
+                  {!ann.isRead && <div className="w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0" style={{ background: 'var(--color-primary)' }} />}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[12px] font-semibold text-[var(--color-text)] truncate">{ann.title}</p>
+                    <p className="text-[11px] text-[var(--color-text-secondary)] mt-0.5 line-clamp-2">{ann.body}</p>
+                    <p className="text-[10px] text-[var(--color-text-muted)] mt-1.5">{formatRelativeTime(ann.createdAt)}</p>
+                  </div>
                 </div>
-                <span className="text-[12px] font-semibold text-[var(--color-text)] text-center leading-tight">{action.label}</span>
-              </motion.button>
+              </div>
             ))}
+            {d.announcements.length === 0 && (
+              <div className="flex flex-col items-center justify-center py-8 text-center">
+                <span className="text-[32px] mb-2">📢</span>
+                <p className="text-[13px] text-[var(--color-text-muted)]">No announcements</p>
+              </div>
+            )}
           </div>
         </div>
       </motion.div>

@@ -24,6 +24,13 @@
   --gradient-hero: linear-gradient(135deg, #6C63FF 0%, #a855f7 50%, #3B82F6 100%);
   --gradient-info: linear-gradient(135deg, #3B82F6 0%, #60A5FA 100%);
   --gradient-orange: linear-gradient(135deg, #F97316 0%, #FB923C 100%);
+  --gradient-card-math: linear-gradient(135deg, #3B82F6, #60A5FA);
+  --gradient-card-science: linear-gradient(135deg, #10B981, #34D399);
+  --gradient-card-english: linear-gradient(135deg, #8B5CF6, #A78BFA);
+  --gradient-card-hindi: linear-gradient(135deg, #F59E0B, #FCD34D);
+  --gradient-card-sst: linear-gradient(135deg, #EF4444, #F87171);
+  --gradient-card-cs: linear-gradient(135deg, #6C63FF, #818CF8);
+  --gradient-card-pe: linear-gradient(135deg, #F97316, #FB923C);
 
   /* Light theme */
   --color-bg: #F8F9FF;
@@ -153,6 +160,11 @@ body {
   100% { background-position: 200% 0; }
 }
 
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
 .skeleton {
   background: linear-gradient(
     90deg,
@@ -161,9 +173,13 @@ body {
     var(--color-surface-2) 75%
   );
   background-size: 200% 100%;
-  animation: skeleton-shimmer 1.5s ease-in-out infinite;
+  animation: shimmer 1.5s infinite;
   border-radius: var(--radius-md);
 }
+
+/* Page transitions */
+.page-enter { opacity: 0; transform: translateY(8px); }
+.page-enter-active { opacity: 1; transform: translateY(0); transition: all 0.25s ease; }
 
 /* Gradient text utility */
 .gradient-text {
