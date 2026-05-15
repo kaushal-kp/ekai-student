@@ -4,12 +4,12 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   Box, Card, CardContent, Grid, Typography, Stack, Chip,
-  LinearProgress
+  LinearProgress, ButtonBase,
 } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import {
   CalendarMonth, TrackChanges, LocalFireDepartment, EmojiEvents,
-  ChevronRight, CalendarToday, LocationOn, Announcement
+  ChevronRight, CalendarToday, LocationOn, Announcement,
 } from '@mui/icons-material';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import { useAuthStore } from '@/store/authStore';
@@ -81,23 +81,13 @@ const fadeUp = { hidden: { opacity: 0, y: 14 }, show: { opacity: 1, y: 0, transi
 
 function SectionHeader({ title, action, onAction }: { title: string; action?: string; onAction?: () => void }) {
   return (
-    <Box
-      sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', px: 3, pt: 2.5, pb: 2, borderBottom: '1px solid', borderColor: 'divider' }}
-    >
+    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', px: 3, pt: 2.5, pb: 2, borderBottom: '1px solid', borderColor: 'divider' }}>
       <Typography variant="h5">{title}</Typography>
       {action && (
-        <Box
-          component="button"
-          onClick={onAction}
-          sx={{
-            display: 'flex', alignItems: 'center', gap: 0.25,
-            border: 'none', bgcolor: 'transparent', cursor: 'pointer',
-            color: 'primary.main', p: 0, '&:hover': { opacity: 0.8 },
-          }}
-        >
+        <ButtonBase onClick={onAction} sx={{ display: 'flex', alignItems: 'center', gap: 0.25, color: 'primary.main', borderRadius: 1, px: 0.5, py: 0.25 }}>
           <Typography variant="body2" sx={{ fontWeight: 600, color: 'inherit' }}>{action}</Typography>
           <ChevronRight sx={{ fontSize: 16 }} />
-        </Box>
+        </ButtonBase>
       )}
     </Box>
   );
@@ -155,7 +145,7 @@ export default function DashboardPage() {
 
         {/* ── HEADER ── */}
         <motion.div variants={fadeUp}>
-          <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'flex-start', sm: 'center' }, gap: 2 }}>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: { xs: 'flex-start', sm: 'center' }, flexDirection: { xs: 'column', sm: 'row' }, gap: 2 }}>
             <Box>
               <Typography variant="h2" sx={{ fontWeight: 800, color: 'text.primary' }}>
                 {getGreeting()}, {student?.firstName}! 👋
@@ -176,7 +166,7 @@ export default function DashboardPage() {
         <motion.div variants={fadeUp}>
           <Grid container spacing={2.5}>
             {statCards.map((card, i) => (
-              <Grid key={card.label} size={{ xs: 6, lg: 3 }}>
+              <Grid size={{ xs: 6, lg: 3 }} key={card.label}>
                 <motion.div
                   initial={{ opacity: 0, y: 18 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -244,13 +234,7 @@ export default function DashboardPage() {
                         <Typography variant="caption" sx={{ width: 36, textAlign: 'right', color: 'text.disabled', fontWeight: 500, fontVariantNumeric: 'tabular-nums', flexShrink: 0 }}>
                           {period.startTime}
                         </Typography>
-                        <Box
-                          sx={{
-                            width: 10, height: 10, borderRadius: '50%', flexShrink: 0,
-                            bgcolor: color,
-                            boxShadow: isNow ? `0 0 0 4px ${alpha(color, 0.25)}` : 'none',
-                          }}
-                        />
+                        <Box sx={{ width: 10, height: 10, borderRadius: '50%', flexShrink: 0, bgcolor: color, boxShadow: isNow ? `0 0 0 4px ${alpha(color, 0.25)}` : 'none' }} />
                         <Box sx={{ flex: 1, minWidth: 0 }}>
                           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                             <Typography variant="body2" sx={{ fontWeight: 600, color: isBreak ? 'text.disabled' : 'text.primary' }}>
@@ -357,9 +341,7 @@ export default function DashboardPage() {
                             <Box>
                               <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.75 }}>
                                 <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 500 }}>Preparation</Typography>
-                                <Typography variant="caption" sx={{ fontWeight: 700, color }}>
-                                  {exam.readinessScore}%
-                                </Typography>
+                                <Typography variant="caption" sx={{ fontWeight: 700, color }}>{exam.readinessScore}%</Typography>
                               </Box>
                               <LinearProgress
                                 variant="determinate"
@@ -437,7 +419,7 @@ export default function DashboardPage() {
                             </Box>
                             <Box sx={{ flex: 1, minWidth: 0 }}>
                               <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.primary' }}>{ach.name}</Typography>
-                              <Typography variant="caption" sx={{ color: 'text.disabled', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ach.description}</Typography>
+                              <Typography variant="caption" sx={{ color: 'text.disabled' }} noWrap>{ach.description}</Typography>
                             </Box>
                             <ChevronRight sx={{ fontSize: 18, color: 'text.disabled', flexShrink: 0 }} />
                           </Box>
