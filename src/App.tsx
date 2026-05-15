@@ -2,10 +2,13 @@ import React, { useEffect } from 'react';
 import { RouterProvider } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
+import { ThemeProvider } from '@mui/material/styles';
+import CssBaseline from '@mui/material/CssBaseline';
 import { router } from '@/router';
 import { useAuthStore } from '@/store/authStore';
 import { mockStudent } from '@/mocks/data/student';
 import { PageLoader } from '@/components/shared/LoadingSpinner';
+import theme from '@/theme';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -44,9 +47,12 @@ function AppInner() {
 
 export default function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <AppInner />
-      <ReactQueryDevtools initialIsOpen={false} />
-    </QueryClientProvider>
+    <ThemeProvider theme={theme}>
+      <CssBaseline />
+      <QueryClientProvider client={queryClient}>
+        <AppInner />
+        <ReactQueryDevtools initialIsOpen={false} />
+      </QueryClientProvider>
+    </ThemeProvider>
   );
 }
