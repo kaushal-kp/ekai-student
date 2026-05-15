@@ -44,7 +44,7 @@ export function AppShell() {
         <TopBar onMenuClick={() => setMobileMenuOpen(true)} />
         <main
           id="main-content"
-          className="flex-1 overflow-y-auto px-6 py-8 md:px-8 lg:px-10"
+          className="flex-1 overflow-y-auto px-5 py-8 md:px-8 lg:px-10"
           tabIndex={-1}
         >
           <div className="max-w-[1280px] mx-auto">
