@@ -142,7 +142,7 @@ export function Sidebar({ onClose }: SidebarProps) {
   return (
     <motion.aside
       initial={false}
-      animate={{ width: sidebarCollapsed ? 64 : 240 }}
+      animate={{ width: sidebarCollapsed ? 72 : 256 }}
       transition={{ type: 'spring', stiffness: 300, damping: 30 }}
       className="flex flex-col h-full overflow-hidden flex-shrink-0"
       style={{
