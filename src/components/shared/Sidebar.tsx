@@ -194,7 +194,7 @@ export function Sidebar({ onClose }: SidebarProps) {
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 overflow-y-auto py-3" aria-label="Main navigation"
+      <nav className="flex-1 overflow-y-auto py-2" aria-label="Main navigation"
         style={{ scrollbarWidth: 'none' }}>
         {navGroups.map((group) => (
           <div key={group.label} className="mb-1">
@@ -205,7 +205,7 @@ export function Sidebar({ onClose }: SidebarProps) {
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
                   transition={{ duration: 0.15 }}
-                  className="px-4 pt-3 pb-1 text-[10px] font-semibold uppercase tracking-[0.08em]"
+                  className="px-4 pt-4 pb-1.5 text-[10px] font-bold uppercase tracking-[0.1em]"
                   style={{ color: 'var(--color-text-muted)' }}
                 >
                   {group.label}
@@ -222,8 +222,8 @@ export function Sidebar({ onClose }: SidebarProps) {
                     onClick={onClose}
                     className={({ isActive }) =>
                       cn(
-                        'flex items-center gap-2.5 mx-2 my-0.5 rounded-[8px] transition-all duration-150 relative',
-                        sidebarCollapsed ? 'justify-center px-0 py-2.5 h-10' : 'px-3 py-2',
+                        'flex items-center gap-3 mx-2 my-0.5 rounded-[10px] transition-all duration-150 relative',
+                        sidebarCollapsed ? 'justify-center px-0 py-2.5 h-10' : 'px-3 py-2.5',
                         isActive
                           ? 'text-[var(--color-primary)]'
                           : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text)]'

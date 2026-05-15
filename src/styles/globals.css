@@ -33,13 +33,13 @@
   --gradient-card-pe: linear-gradient(135deg, #F97316, #FB923C);
 
   /* Light theme */
-  --color-bg: #F8F9FF;
+  --color-bg: #F4F6FB;
   --color-surface: #FFFFFF;
-  --color-surface-2: #F1F2FA;
-  --color-border: #E5E7F0;
-  --color-text: #1A1A2E;
-  --color-text-secondary: #6B7280;
-  --color-text-muted: #9CA3AF;
+  --color-surface-2: #F1F5F9;
+  --color-border: #E2E8F0;
+  --color-text: #0F172A;
+  --color-text-secondary: #475569;
+  --color-text-muted: #94A3B8;
 
   /* Spacing */
   --space-page: 24px;
