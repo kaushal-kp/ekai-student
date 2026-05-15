@@ -4,9 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Phone, ArrowRight, Shield, RefreshCw } from 'lucide-react';
-import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
+import { ArrowRight, Shield, ChevronLeft, Zap, Users, School, Star } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
 import { useUIStore } from '@/store/uiStore';
 import { ROUTES, OTP_RESEND_SECONDS } from '@/lib/constants';
@@ -14,10 +12,40 @@ import { mobileSchema } from '@/lib/validators';
 import api from '@/lib/api';
 
 const mobileForm = z.object({ mobile: mobileSchema });
-const otpForm = z.object({ otp: z.string().length(6, 'Enter 6-digit OTP').regex(/^\d+$/, 'Digits only') });
-
 type MobileForm = z.infer<typeof mobileForm>;
-type OTPForm = z.infer<typeof otpForm>;
+
+function CountdownRing({ seconds, total }: { seconds: number; total: number }) {
+  const radius = 18;
+  const circumference = 2 * Math.PI * radius;
+  const progress = seconds / total;
+  const dashoffset = circumference * (1 - progress);
+
+  return (
+    <svg width="44" height="44" className="rotate-[-90deg]">
+      <circle cx="22" cy="22" r={radius} fill="none" stroke="var(--color-border)" strokeWidth="3" />
+      <circle
+        cx="22" cy="22" r={radius}
+        fill="none"
+        stroke="var(--color-primary)"
+        strokeWidth="3"
+        strokeDasharray={circumference}
+        strokeDashoffset={dashoffset}
+        strokeLinecap="round"
+        style={{ transition: 'stroke-dashoffset 1s linear' }}
+      />
+      <text
+        x="22" y="22"
+        textAnchor="middle"
+        dominantBaseline="central"
+        className="text-[10px] font-bold"
+        fill="var(--color-text)"
+        style={{ transform: 'rotate(90deg)', transformOrigin: '22px 22px', fontSize: '10px', fontWeight: 700 }}
+      >
+        {seconds}
+      </text>
+    </svg>
+  );
+}
 
 export default function LoginPage() {
   const [step, setStep] = useState<'mobile' | 'otp'>('mobile');
@@ -25,13 +53,14 @@ export default function LoginPage() {
   const [sessionId, setSessionId] = useState('');
   const [resendTimer, setResendTimer] = useState(0);
   const [otpDigits, setOtpDigits] = useState(['', '', '', '', '', '']);
+  const [otpShake, setOtpShake] = useState(false);
+  const [loading, setLoading] = useState(false);
   const otpRefs = useRef<(HTMLInputElement | null)[]>([]);
   const navigate = useNavigate();
   const { setAuth } = useAuthStore();
   const { addToast } = useUIStore();
 
   const mobileFormHook = useForm<MobileForm>({ resolver: zodResolver(mobileForm) });
-  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (resendTimer > 0) {
@@ -71,6 +100,8 @@ export default function LoginPage() {
     if (e.key === 'Backspace' && !otpDigits[index] && index > 0) {
       otpRefs.current[index - 1]?.focus();
     }
+    if (e.key === 'ArrowLeft' && index > 0) otpRefs.current[index - 1]?.focus();
+    if (e.key === 'ArrowRight' && index < 5) otpRefs.current[index + 1]?.focus();
   };
 
   const handleVerifyOTP = async (otp: string) => {
@@ -83,6 +114,8 @@ export default function LoginPage() {
       addToast({ type: 'success', title: 'Welcome back!', description: `Hello, ${student.firstName}!` });
       navigate(ROUTES.DASHBOARD);
     } catch (err: any) {
+      setOtpShake(true);
+      setTimeout(() => setOtpShake(false), 600);
       addToast({ type: 'error', title: 'Invalid OTP', description: 'The OTP entered is incorrect. Please try again.' });
       setOtpDigits(['', '', '', '', '', '']);
       otpRefs.current[0]?.focus();
@@ -105,71 +138,128 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex bg-[var(--color-bg)]">
-      {/* Left Panel - Branding */}
-      <div className="hidden lg:flex flex-1 bg-[var(--color-primary)] flex-col justify-between p-12 text-white">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-white/20 rounded-[var(--radius-md)] flex items-center justify-center">
-            <span className="text-white font-bold text-lg">E</span>
+      {/* Left Branding Panel */}
+      <div
+        className="hidden lg:flex flex-col justify-between p-12 relative overflow-hidden"
+        style={{
+          width: '45%',
+          flexShrink: 0,
+          background: 'var(--gradient-hero)',
+        }}
+      >
+        {/* Decorative blobs */}
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute -top-20 -right-20 w-80 h-80 rounded-full opacity-20"
+            style={{ background: 'radial-gradient(circle, white, transparent)' }} />
+          <div className="absolute bottom-20 -left-20 w-60 h-60 rounded-full opacity-10"
+            style={{ background: 'radial-gradient(circle, white, transparent)' }} />
+          <div className="absolute top-1/2 left-1/3 w-40 h-40 rounded-full opacity-10"
+            style={{ background: 'radial-gradient(circle, rgba(255,255,255,0.5), transparent)' }} />
+        </div>
+
+        {/* Logo */}
+        <motion.div
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.6 }}
+          className="flex items-center gap-3 relative z-10"
+        >
+          <div className="w-11 h-11 rounded-[14px] flex items-center justify-center"
+            style={{ background: 'rgba(255,255,255,0.2)', backdropFilter: 'blur(8px)' }}>
+            <Zap className="h-6 w-6 text-white" strokeWidth={2.5} />
           </div>
           <div>
-            <p className="font-bold text-lg">EKAI</p>
-            <p className="text-white/70 text-xs">Student Hub</p>
+            <p className="text-white font-bold text-xl leading-tight">EKAI</p>
+            <p className="text-white/70 text-[11px] font-medium tracking-wide">STUDENT HUB</p>
           </div>
-        </div>
-        <div>
-          <h1 className="text-4xl font-bold mb-4">Your Academic Journey, Simplified</h1>
-          <p className="text-white/80 text-lg leading-relaxed max-w-md">
-            Track attendance, view exam results, manage leave requests, and explore career opportunities — all in one place.
+        </motion.div>
+
+        {/* Main content */}
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.7, delay: 0.2 }}
+          className="relative z-10"
+        >
+          <h1 className="text-[42px] font-bold text-white leading-tight mb-6">
+            Your Academic<br />Journey,<br />Simplified
+          </h1>
+          <p className="text-white/80 text-[17px] leading-relaxed max-w-md mb-10">
+            Track attendance, ace exams, manage leave requests, and explore career opportunities — all in one powerful place.
           </p>
-          <div className="flex gap-6 mt-8">
+
+          {/* Stats chips */}
+          <div className="flex flex-wrap gap-3">
             {[
-              { value: '10K+', label: 'Students' },
-              { value: '500+', label: 'Schools' },
-              { value: '98%', label: 'Satisfaction' },
-            ].map(stat => (
-              <div key={stat.label}>
-                <p className="text-2xl font-bold">{stat.value}</p>
-                <p className="text-white/70 text-sm">{stat.label}</p>
-              </div>
+              { icon: <Users className="h-4 w-4" />, value: '10,000+', label: 'Students' },
+              { icon: <School className="h-4 w-4" />, value: '500+', label: 'Schools' },
+              { icon: <Star className="h-4 w-4" />, value: '98%', label: 'Satisfaction' },
+            ].map((stat, i) => (
+              <motion.div
+                key={stat.label}
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.5 + i * 0.1 }}
+                className="flex items-center gap-2 px-4 py-2.5 rounded-[12px]"
+                style={{ background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(8px)' }}
+              >
+                <span className="text-white/80">{stat.icon}</span>
+                <div>
+                  <p className="text-white font-bold text-[15px] leading-tight">{stat.value}</p>
+                  <p className="text-white/70 text-[11px]">{stat.label}</p>
+                </div>
+              </motion.div>
             ))}
           </div>
-        </div>
-        <p className="text-white/50 text-xs">© 2025 EKAI Education Technology. Your data is protected with enterprise security.</p>
+        </motion.div>
+
+        <p className="text-white/40 text-xs relative z-10">
+          © 2025 EKAI Education Technology · Your data is protected with enterprise security
+        </p>
       </div>
 
-      {/* Right Panel - Login Form */}
+      {/* Right Form Panel */}
       <div className="flex-1 flex items-center justify-center p-8">
-        <div className="w-full max-w-sm">
-          {/* Mobile Logo */}
-          <div className="lg:hidden flex items-center gap-2 mb-8">
-            <div className="w-10 h-10 bg-[var(--color-primary)] rounded-[var(--radius-md)] flex items-center justify-center">
-              <span className="text-white font-bold text-lg">E</span>
+        <div className="w-full max-w-[380px]">
+          {/* Mobile logo */}
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="lg:hidden flex items-center gap-2.5 mb-10"
+          >
+            <div className="w-10 h-10 rounded-[12px] flex items-center justify-center" style={{ background: 'var(--gradient-hero)' }}>
+              <Zap className="h-5 w-5 text-white" strokeWidth={2.5} />
             </div>
             <div>
-              <p className="font-bold text-[var(--color-text)]">EKAI Student Hub</p>
+              <p className="font-bold text-[15px] text-[var(--color-text)]">EKAI Student Hub</p>
+              <p className="text-[11px] text-[var(--color-text-muted)]">Your academic companion</p>
             </div>
-          </div>
+          </motion.div>
 
           <AnimatePresence mode="wait">
             {step === 'mobile' ? (
               <motion.div
                 key="mobile"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                transition={{ duration: 0.2 }}
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
               >
-                <h2 className="text-2xl font-bold text-[var(--color-text)] mb-2">Sign in</h2>
-                <p className="text-[var(--color-text-secondary)] mb-8">Enter your registered mobile number</p>
+                <h2 className="text-[28px] font-bold text-[var(--color-text)] mb-1">Welcome back 👋</h2>
+                <p className="text-[var(--color-text-secondary)] text-[15px] mb-8">
+                  Sign in with your registered mobile number
+                </p>
 
-                <form onSubmit={mobileFormHook.handleSubmit(handleSendOTP)} className="flex flex-col gap-4">
+                <form onSubmit={mobileFormHook.handleSubmit(handleSendOTP)} className="flex flex-col gap-5">
                   <div>
-                    <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-1">
-                      Mobile Number <span className="text-[var(--color-danger)]">*</span>
+                    <label className="block text-[13px] font-semibold text-[var(--color-text-secondary)] mb-2">
+                      Mobile Number
                     </label>
-                    <div className="flex">
-                      <div className="flex items-center px-3 bg-[var(--color-surface-2)] border border-r-0 border-[var(--color-border)] rounded-l-[var(--radius-md)] text-sm text-[var(--color-text-secondary)]">
-                        +91
+                    <div className="flex rounded-[12px] overflow-hidden border border-[var(--color-border)] focus-within:border-[var(--color-primary)] focus-within:ring-2 focus-within:ring-[var(--color-primary)]/20 transition-all"
+                      style={{ background: 'var(--color-surface)' }}>
+                      <div className="flex items-center gap-2 px-3 border-r border-[var(--color-border)] bg-[var(--color-surface-2)] flex-shrink-0">
+                        <span className="text-[18px]">🇮🇳</span>
+                        <span className="text-[13px] font-medium text-[var(--color-text-secondary)]">+91</span>
                       </div>
                       <input
                         {...mobileFormHook.register('mobile')}
@@ -177,53 +267,84 @@ export default function LoginPage() {
                         inputMode="numeric"
                         maxLength={10}
                         placeholder="9876543210"
-                        className="flex-1 px-3 py-2.5 border border-[var(--color-border)] rounded-r-[var(--radius-md)] bg-[var(--color-surface)] text-sm text-[var(--color-text)] placeholder:text-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)]/20"
+                        className="flex-1 px-4 py-3.5 bg-transparent text-[15px] text-[var(--color-text)] placeholder:text-[var(--color-text-muted)] focus:outline-none"
                       />
                     </div>
                     {mobileFormHook.formState.errors.mobile && (
-                      <p className="text-xs text-[var(--color-danger)] mt-1">
-                        {mobileFormHook.formState.errors.mobile.message}
-                      </p>
+                      <motion.p
+                        initial={{ opacity: 0, y: -5 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="text-[12px] text-[var(--color-danger)] mt-2 flex items-center gap-1"
+                      >
+                        ⚠ {mobileFormHook.formState.errors.mobile.message}
+                      </motion.p>
                     )}
                   </div>
 
-                  <Button type="submit" loading={loading} className="w-full gap-2">
-                    Send OTP <ArrowRight className="h-4 w-4" />
-                  </Button>
+                  <motion.button
+                    type="submit"
+                    disabled={loading}
+                    whileHover={{ scale: loading ? 1 : 1.01 }}
+                    whileTap={{ scale: loading ? 1 : 0.98 }}
+                    className="w-full flex items-center justify-center gap-2 py-3.5 rounded-[12px] text-white font-semibold text-[15px] transition-all disabled:opacity-60"
+                    style={{ background: 'var(--gradient-hero)' }}
+                  >
+                    {loading ? (
+                      <motion.div
+                        animate={{ rotate: 360 }}
+                        transition={{ duration: 0.8, repeat: Infinity, ease: 'linear' }}
+                        className="w-5 h-5 rounded-full border-2 border-white/30 border-t-white"
+                      />
+                    ) : (
+                      <>Send OTP <ArrowRight className="h-4 w-4" /></>
+                    )}
+                  </motion.button>
                 </form>
 
-                <div className="mt-6 flex items-center gap-2 text-xs text-[var(--color-text-muted)]">
-                  <Shield className="h-3.5 w-3.5" />
+                <div className="mt-6 flex items-center gap-2 text-[12px] text-[var(--color-text-muted)]">
+                  <Shield className="h-3.5 w-3.5 text-[var(--color-success)]" />
                   <span>Secured with end-to-end encryption. OTP expires in 5 minutes.</span>
                 </div>
 
-                {/* Demo hint */}
-                <div className="mt-6 p-3 rounded-[var(--radius-md)] bg-[var(--color-primary-light)] text-xs text-[var(--color-primary)]">
-                  <strong>Demo Mode:</strong> Enter any 10-digit mobile number. Use OTP: <strong>123456</strong>
-                </div>
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.4 }}
+                  className="mt-5 p-4 rounded-[12px] border"
+                  style={{ background: 'var(--color-primary-light)', borderColor: 'var(--color-primary)' }}
+                >
+                  <p className="text-[12px] text-[var(--color-primary)] font-medium">
+                    🎯 <strong>Demo Mode</strong> — Enter any 10-digit number. OTP: <strong>123456</strong>
+                  </p>
+                </motion.div>
               </motion.div>
             ) : (
               <motion.div
                 key="otp"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                transition={{ duration: 0.2 }}
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
               >
                 <button
                   onClick={() => { setStep('mobile'); setOtpDigits(['', '', '', '', '', '']); }}
-                  className="text-sm text-[var(--color-primary)] mb-4 flex items-center gap-1 hover:underline"
+                  className="flex items-center gap-1.5 text-[13px] font-medium text-[var(--color-text-secondary)] hover:text-[var(--color-text)] mb-8 transition-colors"
                 >
-                  ← Change number
+                  <ChevronLeft className="h-4 w-4" /> Change number
                 </button>
 
-                <h2 className="text-2xl font-bold text-[var(--color-text)] mb-2">Enter OTP</h2>
-                <p className="text-[var(--color-text-secondary)] mb-8">
-                  We sent a 6-digit OTP to <strong>+91 {mobile}</strong>
+                <h2 className="text-[28px] font-bold text-[var(--color-text)] mb-1">Enter OTP 🔐</h2>
+                <p className="text-[var(--color-text-secondary)] text-[15px] mb-8">
+                  We sent a 6-digit code to{' '}
+                  <span className="font-semibold text-[var(--color-text)]">+91 {mobile}</span>
                 </p>
 
-                {/* OTP Input Boxes */}
-                <div className="flex gap-3 mb-6">
+                {/* OTP boxes */}
+                <motion.div
+                  animate={otpShake ? { x: [-10, 10, -8, 8, -5, 5, 0] } : {}}
+                  transition={{ duration: 0.5 }}
+                  className="flex gap-2.5 mb-8"
+                >
                   {otpDigits.map((digit, i) => (
                     <input
                       key={i}
@@ -234,31 +355,51 @@ export default function LoginPage() {
                       value={digit}
                       onChange={e => handleOTPInput(i, e.target.value)}
                       onKeyDown={e => handleOTPKeyDown(i, e)}
-                      className="w-12 h-12 text-center text-xl font-bold border-2 border-[var(--color-border)] rounded-[var(--radius-md)] bg-[var(--color-surface)] text-[var(--color-text)] focus:outline-none focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)]/20 transition-colors"
+                      className="flex-1 aspect-square max-w-[52px] text-center text-[20px] font-bold rounded-[12px] border-2 transition-all focus:outline-none"
+                      style={{
+                        background: 'var(--color-surface)',
+                        color: 'var(--color-text)',
+                        borderColor: digit ? 'var(--color-primary)' : otpShake ? 'var(--color-danger)' : 'var(--color-border)',
+                        boxShadow: digit ? '0 0 0 3px var(--color-primary)/20' : 'none',
+                      }}
                       aria-label={`OTP digit ${i + 1}`}
                     />
                   ))}
-                </div>
+                </motion.div>
 
-                <Button
-                  className="w-full"
-                  loading={loading}
+                <motion.button
                   onClick={() => handleVerifyOTP(otpDigits.join(''))}
-                  disabled={otpDigits.some(d => !d)}
+                  disabled={loading || otpDigits.some(d => !d)}
+                  whileHover={{ scale: loading || otpDigits.some(d => !d) ? 1 : 1.01 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="w-full flex items-center justify-center gap-2 py-3.5 rounded-[12px] text-white font-semibold text-[15px] transition-all disabled:opacity-50"
+                  style={{ background: 'var(--gradient-hero)' }}
                 >
-                  Verify OTP
-                </Button>
+                  {loading ? (
+                    <motion.div
+                      animate={{ rotate: 360 }}
+                      transition={{ duration: 0.8, repeat: Infinity, ease: 'linear' }}
+                      className="w-5 h-5 rounded-full border-2 border-white/30 border-t-white"
+                    />
+                  ) : (
+                    <>Verify & Sign In <ArrowRight className="h-4 w-4" /></>
+                  )}
+                </motion.button>
 
-                <div className="mt-4 flex items-center justify-between text-sm">
-                  <span className="text-[var(--color-text-secondary)]">Didn't receive?</span>
-                  <button
-                    onClick={handleResend}
-                    disabled={resendTimer > 0}
-                    className="flex items-center gap-1 text-[var(--color-primary)] disabled:text-[var(--color-text-muted)] hover:underline"
-                  >
-                    <RefreshCw className="h-3.5 w-3.5" />
-                    {resendTimer > 0 ? `Resend in ${resendTimer}s` : 'Resend OTP'}
-                  </button>
+                <div className="mt-6 flex items-center justify-between">
+                  <span className="text-[13px] text-[var(--color-text-secondary)]">Didn't receive the code?</span>
+                  <div className="flex items-center gap-2">
+                    {resendTimer > 0 ? (
+                      <CountdownRing seconds={resendTimer} total={OTP_RESEND_SECONDS} />
+                    ) : (
+                      <button
+                        onClick={handleResend}
+                        className="text-[13px] font-semibold text-[var(--color-primary)] hover:underline"
+                      >
+                        Resend OTP
+                      </button>
+                    )}
+                  </div>
                 </div>
               </motion.div>
             )}

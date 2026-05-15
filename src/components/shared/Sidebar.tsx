@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
@@ -10,10 +10,22 @@ import {
   LayoutDashboard, BookOpen, TrendingUp, CalendarCheck, FileText, Target,
   ClipboardCheck, UserCheck, Share2, Award, Activity, Briefcase, Gift,
   MessageSquare, Bell, Settings, ChevronLeft, ChevronRight, LogOut, Star,
-  Shield, UserCircle
+  Shield, UserCircle, Zap
 } from 'lucide-react';
 
-const navGroups = [
+interface NavItem {
+  label: string;
+  icon: React.ComponentType<any>;
+  path: string;
+  badgeKey?: string;
+}
+
+interface NavGroup {
+  label: string;
+  items: NavItem[];
+}
+
+const navGroups: NavGroup[] = [
   {
     label: 'Overview',
     items: [
@@ -68,6 +80,46 @@ interface SidebarProps {
   onClose?: () => void;
 }
 
+interface TooltipProps {
+  label: string;
+  children: React.ReactNode;
+  show: boolean;
+}
+
+function NavTooltip({ label, children, show }: TooltipProps) {
+  const [visible, setVisible] = useState(false);
+  if (!show) return <>{children}</>;
+  return (
+    <div
+      className="relative"
+      onMouseEnter={() => setVisible(true)}
+      onMouseLeave={() => setVisible(false)}
+    >
+      {children}
+      <AnimatePresence>
+        {visible && (
+          <motion.div
+            initial={{ opacity: 0, x: -4 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -4 }}
+            transition={{ duration: 0.15 }}
+            className="absolute left-full top-1/2 -translate-y-1/2 ml-3 z-50 pointer-events-none"
+          >
+            <div className="px-2.5 py-1.5 rounded-[var(--radius-md)] text-xs font-medium whitespace-nowrap"
+              style={{
+                background: 'var(--color-text)',
+                color: 'var(--color-bg)',
+                boxShadow: 'var(--shadow-lg)'
+              }}>
+              {label}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
 export function Sidebar({ onClose }: SidebarProps) {
   const { student, clearAuth } = useAuthStore();
   const { sidebarCollapsed, toggleSidebar } = useUIStore();
@@ -85,142 +137,230 @@ export function Sidebar({ onClose }: SidebarProps) {
     return 0;
   };
 
+  const getInitials = (name: string) => name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+
   return (
-    <aside
-      className={cn(
-        'flex flex-col h-full bg-[var(--color-surface)] border-r border-[var(--color-border)] transition-all duration-300 relative z-10',
-        sidebarCollapsed ? 'w-16' : 'w-64'
-      )}
+    <motion.aside
+      initial={false}
+      animate={{ width: sidebarCollapsed ? 64 : 240 }}
+      transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+      className="flex flex-col h-full overflow-hidden flex-shrink-0"
+      style={{
+        background: 'var(--color-surface)',
+        borderRight: '1px solid var(--color-border)',
+        position: 'relative',
+        zIndex: 10,
+      }}
     >
       {/* Logo */}
-      <div className="flex items-center justify-between px-4 h-16 border-b border-[var(--color-border)] flex-shrink-0">
-        <AnimatePresence mode="wait">
-          {!sidebarCollapsed && (
-            <motion.div
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -10 }}
-              transition={{ duration: 0.15 }}
-              className="flex items-center gap-2"
-            >
-              <div className="w-8 h-8 rounded-[var(--radius-md)] bg-[var(--color-primary)] flex items-center justify-center flex-shrink-0">
-                <span className="text-white font-bold text-sm">E</span>
-              </div>
-              <div>
-                <p className="font-bold text-sm text-[var(--color-text)]">EKAI</p>
-                <p className="text-xs text-[var(--color-text-muted)]">Student Hub</p>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-        {sidebarCollapsed && (
-          <div className="w-8 h-8 rounded-[var(--radius-md)] bg-[var(--color-primary)] flex items-center justify-center mx-auto">
-            <span className="text-white font-bold text-sm">E</span>
+      <div className="flex items-center h-[60px] flex-shrink-0 px-4"
+        style={{ borderBottom: '1px solid var(--color-border)' }}>
+        <div className="flex items-center gap-3 min-w-0 flex-1">
+          {/* Gradient icon */}
+          <div className="w-8 h-8 rounded-[10px] flex items-center justify-center flex-shrink-0"
+            style={{ background: 'var(--gradient-hero)' }}>
+            <Zap className="h-4 w-4 text-white" strokeWidth={2.5} />
           </div>
-        )}
-        {/* Toggle button - hidden on mobile */}
+
+          <AnimatePresence>
+            {!sidebarCollapsed && (
+              <motion.div
+                initial={{ opacity: 0, width: 0 }}
+                animate={{ opacity: 1, width: 'auto' }}
+                exit={{ opacity: 0, width: 0 }}
+                transition={{ duration: 0.2 }}
+                className="overflow-hidden"
+              >
+                <div className="whitespace-nowrap">
+                  <p className="font-bold text-[13px] leading-tight" style={{ color: 'var(--color-text)' }}>EKAI</p>
+                  <p className="text-[10px] font-medium" style={{ color: 'var(--color-text-muted)' }}>Student Hub</p>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+
+        {/* Toggle - desktop only */}
         <button
           onClick={toggleSidebar}
-          className="hidden lg:flex items-center justify-center w-6 h-6 rounded text-[var(--color-text-muted)] hover:text-[var(--color-text)] hover:bg-[var(--color-surface-2)]"
+          className="hidden lg:flex items-center justify-center w-6 h-6 rounded-[6px] transition-colors flex-shrink-0"
+          style={{ color: 'var(--color-text-muted)' }}
           aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          onMouseEnter={e => (e.currentTarget.style.background = 'var(--color-surface-2)')}
+          onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
         >
-          {sidebarCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+          {sidebarCollapsed ? <ChevronRight className="h-3.5 w-3.5" /> : <ChevronLeft className="h-3.5 w-3.5" />}
         </button>
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 overflow-y-auto py-4 scrollbar-thin" aria-label="Main navigation">
+      <nav className="flex-1 overflow-y-auto py-3" aria-label="Main navigation"
+        style={{ scrollbarWidth: 'none' }}>
         {navGroups.map((group) => (
-          <div key={group.label} className="mb-4">
-            {!sidebarCollapsed && (
-              <p className="px-4 text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wider mb-1">
-                {group.label}
-              </p>
-            )}
+          <div key={group.label} className="mb-1">
+            <AnimatePresence>
+              {!sidebarCollapsed && (
+                <motion.p
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.15 }}
+                  className="px-4 pt-3 pb-1 text-[10px] font-semibold uppercase tracking-[0.08em]"
+                  style={{ color: 'var(--color-text-muted)' }}
+                >
+                  {group.label}
+                </motion.p>
+              )}
+            </AnimatePresence>
+
             {group.items.map((item) => {
               const badge = getBadgeCount(item.badgeKey);
               return (
-                <NavLink
-                  key={item.path}
-                  to={item.path}
-                  onClick={onClose}
-                  className={({ isActive }) =>
-                    cn(
-                      'flex items-center gap-3 px-4 py-2 mx-2 rounded-[var(--radius-md)] transition-colors text-sm font-medium relative',
-                      isActive
-                        ? 'bg-[var(--color-primary-light)] text-[var(--color-primary)]'
-                        : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-2)] hover:text-[var(--color-text)]',
-                      sidebarCollapsed && 'justify-center px-2'
-                    )
-                  }
-                  title={sidebarCollapsed ? item.label : undefined}
-                >
-                  <item.icon className="h-4 w-4 flex-shrink-0" />
-                  {!sidebarCollapsed && <span className="flex-1 truncate">{item.label}</span>}
-                  {!sidebarCollapsed && badge > 0 && (
-                    <span className="bg-[var(--color-danger)] text-white text-xs rounded-full px-1.5 py-0.5 min-w-[18px] text-center">
-                      {badge}
-                    </span>
-                  )}
-                  {sidebarCollapsed && badge > 0 && (
-                    <span className="absolute top-1 right-1 w-2 h-2 bg-[var(--color-danger)] rounded-full" />
-                  )}
-                </NavLink>
+                <NavTooltip key={item.path} label={item.label} show={sidebarCollapsed}>
+                  <NavLink
+                    to={item.path}
+                    onClick={onClose}
+                    className={({ isActive }) =>
+                      cn(
+                        'flex items-center gap-2.5 mx-2 my-0.5 rounded-[8px] transition-all duration-150 relative',
+                        sidebarCollapsed ? 'justify-center px-0 py-2.5 h-10' : 'px-3 py-2',
+                        isActive
+                          ? 'text-[var(--color-primary)]'
+                          : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text)]'
+                      )
+                    }
+                    style={({ isActive }) => isActive ? {
+                      background: 'var(--color-primary-light)',
+                      boxShadow: 'inset 3px 0 0 var(--color-primary)',
+                    } : undefined}
+                  >
+                    {({ isActive }) => (
+                      <>
+                        <item.icon className={cn('flex-shrink-0 transition-transform', isActive ? 'h-4 w-4' : 'h-4 w-4')} />
+
+                        <AnimatePresence>
+                          {!sidebarCollapsed && (
+                            <motion.span
+                              initial={{ opacity: 0, width: 0 }}
+                              animate={{ opacity: 1, width: 'auto' }}
+                              exit={{ opacity: 0, width: 0 }}
+                              transition={{ duration: 0.15 }}
+                              className="text-[13px] font-medium truncate flex-1 overflow-hidden whitespace-nowrap"
+                            >
+                              {item.label}
+                            </motion.span>
+                          )}
+                        </AnimatePresence>
+
+                        {/* Badge - expanded */}
+                        {!sidebarCollapsed && badge > 0 && (
+                          <span className="text-[10px] font-bold rounded-full px-1.5 py-0.5 min-w-[18px] text-center text-white flex-shrink-0"
+                            style={{ background: 'var(--color-danger)' }}>
+                            {badge}
+                          </span>
+                        )}
+
+                        {/* Badge dot - collapsed */}
+                        {sidebarCollapsed && badge > 0 && (
+                          <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full"
+                            style={{ background: 'var(--color-danger)' }} />
+                        )}
+                      </>
+                    )}
+                  </NavLink>
+                </NavTooltip>
               );
             })}
           </div>
         ))}
       </nav>
 
-      {/* User section */}
-      <div className="border-t border-[var(--color-border)] p-3 flex-shrink-0">
-        <NavLink
-          to={ROUTES.SETTINGS}
-          onClick={onClose}
-          className={({ isActive }) =>
-            cn(
-              'flex items-center gap-3 p-2 rounded-[var(--radius-md)] transition-colors mb-1',
-              isActive ? 'bg-[var(--color-primary-light)] text-[var(--color-primary)]' : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-2)]',
-              sidebarCollapsed && 'justify-center'
-            )
-          }
-        >
-          <Settings className="h-4 w-4 flex-shrink-0" />
-          {!sidebarCollapsed && <span className="text-sm font-medium">Settings</span>}
-        </NavLink>
-
-        {!sidebarCollapsed && student && (
-          <div className="flex items-center gap-2 p-2 rounded-[var(--radius-md)]">
-            <img
-              src={student.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${student.firstName}`}
-              alt={student.name}
-              className="w-8 h-8 rounded-full object-cover bg-[var(--color-surface-2)]"
-              onError={(e) => { (e.target as HTMLImageElement).src = `https://api.dicebear.com/7.x/initials/svg?seed=${student.name}`; }}
-            />
-            <div className="flex-1 min-w-0">
-              <p className="text-xs font-semibold text-[var(--color-text)] truncate">{student.name}</p>
-              <p className="text-xs text-[var(--color-text-muted)] truncate">Class {student.class}-{student.section}</p>
-            </div>
-            <button
-              onClick={handleLogout}
-              className="text-[var(--color-text-muted)] hover:text-[var(--color-danger)] transition-colors"
-              aria-label="Logout"
-            >
-              <LogOut className="h-4 w-4" />
-            </button>
-          </div>
-        )}
-
-        {sidebarCollapsed && (
-          <button
-            onClick={handleLogout}
-            className="w-full flex justify-center p-2 rounded-[var(--radius-md)] text-[var(--color-text-muted)] hover:text-[var(--color-danger)] hover:bg-[var(--color-surface-2)] transition-colors"
-            aria-label="Logout"
+      {/* Bottom divider */}
+      <div style={{ borderTop: '1px solid var(--color-border)' }} className="flex-shrink-0">
+        {/* Settings link */}
+        <NavTooltip label="Settings" show={sidebarCollapsed}>
+          <NavLink
+            to={ROUTES.SETTINGS}
+            onClick={onClose}
+            className={({ isActive }) =>
+              cn(
+                'flex items-center gap-2.5 mx-2 mt-2 rounded-[8px] transition-all duration-150',
+                sidebarCollapsed ? 'justify-center px-0 py-2.5 h-10' : 'px-3 py-2',
+                isActive ? 'text-[var(--color-primary)]' : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text)]'
+              )
+            }
+            style={({ isActive }) => isActive ? { background: 'var(--color-primary-light)' } : undefined}
           >
-            <LogOut className="h-4 w-4" />
-          </button>
-        )}
+            <Settings className="h-4 w-4 flex-shrink-0" />
+            <AnimatePresence>
+              {!sidebarCollapsed && (
+                <motion.span
+                  initial={{ opacity: 0, width: 0 }}
+                  animate={{ opacity: 1, width: 'auto' }}
+                  exit={{ opacity: 0, width: 0 }}
+                  transition={{ duration: 0.15 }}
+                  className="text-[13px] font-medium whitespace-nowrap overflow-hidden"
+                >
+                  Settings
+                </motion.span>
+              )}
+            </AnimatePresence>
+          </NavLink>
+        </NavTooltip>
+
+        {/* User card */}
+        <div className={cn('p-2', sidebarCollapsed ? 'flex justify-center' : '')}>
+          {!sidebarCollapsed && student ? (
+            <div className="flex items-center gap-2.5 px-2 py-2 rounded-[10px] transition-colors"
+              style={{ background: 'var(--color-surface-2)' }}>
+              {/* Avatar */}
+              <div className="w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center text-white text-xs font-bold overflow-hidden"
+                style={{ background: 'var(--gradient-primary)' }}>
+                {student.avatarUrl
+                  ? <img src={student.avatarUrl} alt={student.name} className="w-full h-full object-cover"
+                    onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                  : getInitials(student.name)
+                }
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-[12px] font-semibold truncate" style={{ color: 'var(--color-text)' }}>{student.name}</p>
+                <p className="text-[11px] truncate" style={{ color: 'var(--color-text-muted)' }}>
+                  Class {student.class}-{student.section}
+                </p>
+              </div>
+              <button
+                onClick={handleLogout}
+                className="flex-shrink-0 p-1 rounded-[6px] transition-colors"
+                style={{ color: 'var(--color-text-muted)' }}
+                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = 'var(--color-danger)'; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'var(--color-text-muted)'; }}
+                aria-label="Logout"
+              >
+                <LogOut className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          ) : sidebarCollapsed ? (
+            <NavTooltip label="Logout" show>
+              <button
+                onClick={handleLogout}
+                className="w-10 h-10 flex items-center justify-center rounded-[8px] transition-colors"
+                style={{ color: 'var(--color-text-muted)' }}
+                onMouseEnter={e => {
+                  (e.currentTarget as HTMLElement).style.color = 'var(--color-danger)';
+                  (e.currentTarget as HTMLElement).style.background = 'var(--color-surface-2)';
+                }}
+                onMouseLeave={e => {
+                  (e.currentTarget as HTMLElement).style.color = 'var(--color-text-muted)';
+                  (e.currentTarget as HTMLElement).style.background = 'transparent';
+                }}
+                aria-label="Logout"
+              >
+                <LogOut className="h-4 w-4" />
+              </button>
+            </NavTooltip>
+          ) : null}
+        </div>
       </div>
-    </aside>
+    </motion.aside>
   );
 }

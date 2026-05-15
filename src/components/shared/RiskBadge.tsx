@@ -14,7 +14,6 @@ const levelConfig: Record<string, { label: string; color: string; bg: string }> 
   [ReadinessLevel.NOT_STARTED]: { label: 'Not Started', color: 'var(--color-text-muted)', bg: 'var(--color-surface-2)' },
   [SubjectStatus.ON_TRACK]: { label: 'On Track', color: 'var(--color-success)', bg: 'var(--color-success-light)' },
   [SubjectStatus.NEEDS_ATTENTION]: { label: 'Needs Attention', color: 'var(--color-warning)', bg: 'var(--color-warning-light)' },
-  [SubjectStatus.AT_RISK]: { label: 'At Risk', color: 'var(--color-danger)', bg: 'var(--color-danger-light)' },
 };
 
 export function RiskBadge({ status, className }: RiskBadgeProps) {
