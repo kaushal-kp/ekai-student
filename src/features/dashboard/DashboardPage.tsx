@@ -107,13 +107,13 @@ const fade = {
 const stagger = { hidden: {}, show: { transition: { staggerChildren: 0.07 } } };
 
 /* ─── Card wrapper ────────────────────────────────────────── */
-const CARD_SHADOW = '0 1px 3px rgba(15,23,42,0.06), 0 1px 2px rgba(15,23,42,0.04)';
-const CARD_SHADOW_HOVER = '0 8px 24px rgba(15,23,42,0.10)';
+const CARD_SHADOW = '0 0 0 1px rgba(17,24,39,0.06), 0 2px 6px rgba(17,24,39,0.06), 0 6px 16px rgba(17,24,39,0.06)';
+const CARD_SHADOW_HOVER = '0 0 0 1px rgba(17,24,39,0.08), 0 4px 12px rgba(17,24,39,0.10), 0 12px 32px rgba(17,24,39,0.10)';
 
 function Card({ children, className = '', onClick }: { children: React.ReactNode; className?: string; onClick?: () => void }) {
   return (
     <div
-      className={`bg-white rounded-2xl border border-slate-100 ${onClick ? 'cursor-pointer' : ''} ${className}`}
+      className={`bg-white rounded-2xl ${onClick ? 'cursor-pointer' : ''} ${className}`}
       onClick={onClick}
       style={{ boxShadow: CARD_SHADOW }}
     >
@@ -255,7 +255,7 @@ export default function DashboardPage() {
       </motion.div>
 
       {/* ── STAT CARDS ─────────────────────────────────────── */}
-      <motion.div variants={fade} className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <motion.div variants={fade} className="grid grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
         {statCards.map((card, i) => (
           <motion.div
             key={card.label}
@@ -265,17 +265,17 @@ export default function DashboardPage() {
             whileHover={{ y: -3 }}
             whileTap={{ scale: 0.97 }}
             onClick={() => navigate(card.path)}
-            className="bg-white rounded-2xl p-6 cursor-pointer border border-slate-100 transition-all duration-200"
+            className="bg-white rounded-2xl p-6 cursor-pointer transition-all duration-200"
             style={{ boxShadow: CARD_SHADOW }}
             onMouseEnter={e => (e.currentTarget.style.boxShadow = CARD_SHADOW_HOVER)}
             onMouseLeave={e => (e.currentTarget.style.boxShadow = CARD_SHADOW)}
           >
-            <div className="flex items-start justify-between mb-5">
+            <div className="flex items-start justify-between mb-6">
               <div
-                className="w-11 h-11 rounded-[14px] flex items-center justify-center flex-shrink-0"
+                className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0"
                 style={{
                   background: card.gradient,
-                  boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                  boxShadow: '0 6px 16px rgba(0,0,0,0.18)',
                 }}
               >
                 {card.icon}
@@ -293,7 +293,7 @@ export default function DashboardPage() {
               )}
             </div>
             <div
-              className="text-[34px] font-bold tracking-tight leading-none"
+              className="text-[36px] font-bold tracking-tight leading-none"
               style={{ color: '#0F172A' }}
             >
               <Counter to={card.value} prefix={'prefix' in card ? card.prefix : ''} suffix={card.suffix} />
@@ -305,7 +305,7 @@ export default function DashboardPage() {
       </motion.div>
 
       {/* ── SCHEDULE + READINESS ────────────────────────────── */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 mb-5">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
 
         {/* Today's Schedule */}
         <motion.div variants={fade} className="lg:col-span-2">
@@ -323,10 +323,10 @@ export default function DashboardPage() {
                 return (
                   <div
                     key={idx}
-                    className="flex items-center gap-5 px-6 py-4 transition-colors"
+                    className="flex items-center gap-5 px-6 py-[18px] transition-colors"
                     style={{
-                      background: isNow ? `${color}0C` : 'transparent',
-                      borderBottom: idx < d.todayTimetable.length - 1 ? '1px solid #F8FAFC' : 'none',
+                      background: isNow ? `${color}0D` : 'transparent',
+                      borderBottom: idx < d.todayTimetable.length - 1 ? '1px solid #F1F5F9' : 'none',
                     }}
                   >
                     <div className="w-10 flex-shrink-0">
@@ -425,7 +425,7 @@ export default function DashboardPage() {
       </div>
 
       {/* ── UPCOMING EXAMS ─────────────────────────────────── */}
-      <motion.div variants={fade} className="mb-5">
+      <motion.div variants={fade} className="mb-8">
         <Card>
           <CardHeader title="Upcoming Exams" action="View all" onAction={() => navigate(ROUTES.EXAMS)} />
           <div className="px-6 pb-6 pt-4">
@@ -441,11 +441,12 @@ export default function DashboardPage() {
                     onClick={() => navigate(ROUTES.EXAMS)}
                     className="rounded-xl border cursor-pointer overflow-hidden"
                     style={{
-                      borderColor: `${color}30`,
-                      boxShadow: '0 1px 3px rgba(15,23,42,0.04)',
+                      borderColor: `${color}40`,
+                      border: `1.5px solid ${color}30`,
+                      boxShadow: '0 1px 4px rgba(15,23,42,0.06), 0 4px 12px rgba(15,23,42,0.06)',
                     }}
-                    onMouseEnter={e => (e.currentTarget.style.boxShadow = '0 6px 18px rgba(15,23,42,0.10)')}
-                    onMouseLeave={e => (e.currentTarget.style.boxShadow = '0 1px 3px rgba(15,23,42,0.04)')}
+                    onMouseEnter={e => (e.currentTarget.style.boxShadow = '0 4px 16px rgba(15,23,42,0.12), 0 8px 24px rgba(15,23,42,0.10)')}
+                    onMouseLeave={e => (e.currentTarget.style.boxShadow = '0 1px 4px rgba(15,23,42,0.06), 0 4px 12px rgba(15,23,42,0.06)')}
                   >
                     <div className="h-1.5" style={{ background: color }} />
                     <div className="p-5">
@@ -495,7 +496,7 @@ export default function DashboardPage() {
       </motion.div>
 
       {/* ── RESULTS + ACHIEVEMENTS ─────────────────────────── */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-5">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
 
         {/* Recent Results */}
         <motion.div variants={fade}>

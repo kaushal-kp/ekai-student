@@ -197,7 +197,7 @@ export function Sidebar({ onClose }: SidebarProps) {
       <nav className="flex-1 overflow-y-auto py-2" aria-label="Main navigation"
         style={{ scrollbarWidth: 'none' }}>
         {navGroups.map((group) => (
-          <div key={group.label} className="mb-1">
+          <div key={group.label} className="mb-2">
             <AnimatePresence>
               {!sidebarCollapsed && (
                 <motion.p
