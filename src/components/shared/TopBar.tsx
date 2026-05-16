@@ -40,9 +40,6 @@ export function TopBar({ onMenuClick, sidebarWidth }: { onMenuClick: () => void;
         borderBottom: '1px solid',
         borderColor: 'divider',
         color: 'text.primary',
-        zIndex: (theme) => theme.zIndex.drawer - 1,
-        width: { lg: `calc(100% - ${sidebarWidth}px)` },
-        ml: { lg: `${sidebarWidth}px` },
       }}
     >
       <Toolbar sx={{ gap: 1, minHeight: { xs: 56 } }}>

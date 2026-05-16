@@ -1,9 +1,20 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Gift, ExternalLink, Calendar, DollarSign, CheckCircle, AlertCircle } from 'lucide-react';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
-import { Badge } from '@/components/ui/Badge';
-import { Button } from '@/components/ui/Button';
+import {
+  Box,
+  Card,
+  CardContent,
+  Chip,
+  Button,
+  Tabs,
+  Tab,
+  Typography,
+} from '@mui/material';
+import OpenInNewIcon from '@mui/icons-material/OpenInNew';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import ErrorOutlineIcon from '@mui/icons-material/ErrorOutlined';
+import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
+import CurrencyRupeeIcon from '@mui/icons-material/CurrencyRupee';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
 import { formatDate } from '@/lib/formatters';
@@ -11,10 +22,8 @@ import { formatIndianCurrency, daysUntil } from '@/lib/utils';
 import api from '@/lib/api';
 import { OpportunitiesResponse } from '@/types/api';
 
-const tabs = ['scholarships', 'internships'] as const;
-
 export default function OpportunitiesPage() {
-  const [tab, setTab] = useState<'scholarships' | 'internships'>('scholarships');
+  const [tab, setTab] = useState(0);
 
   const { data, isLoading } = useQuery<OpportunitiesResponse>({
     queryKey: ['opportunities'],
@@ -24,111 +33,172 @@ export default function OpportunitiesPage() {
   if (isLoading) return <LoadingSpinner />;
 
   return (
-    <div className="max-w-4xl">
+    <Box sx={{ maxWidth: 768 }}>
       <PageHeader title="Opportunities" subtitle="Scholarships, internships, and campus events" />
 
-      <div className="flex border-b border-[var(--color-border)] mb-6">
-        {tabs.map(t => (
-          <button
-            key={t}
-            onClick={() => setTab(t)}
-            className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors capitalize ${tab === t ? 'border-[var(--color-primary)] text-[var(--color-primary)]' : 'border-transparent text-[var(--color-text-secondary)]'}`}
-          >
-            {t === 'scholarships' ? `Scholarships (${data?.scholarships.length})` : `Internships (${data?.internships.length})`}
-          </button>
-        ))}
-      </div>
+      <Tabs
+        value={tab}
+        onChange={(_, v) => setTab(v)}
+        sx={{ mb: 3, borderBottom: '1px solid', borderColor: 'divider' }}
+      >
+        <Tab
+          label={`Scholarships (${data?.scholarships.length ?? 0})`}
+          sx={{ fontWeight: 600, textTransform: 'none', fontSize: 14 }}
+        />
+        <Tab
+          label={`Internships (${data?.internships.length ?? 0})`}
+          sx={{ fontWeight: 600, textTransform: 'none', fontSize: 14 }}
+        />
+      </Tabs>
 
-      {tab === 'scholarships' && (
-        <div className="space-y-4">
+      {tab === 0 && (
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
           {data?.scholarships.map(sch => {
             const days = daysUntil(sch.deadline);
             return (
-              <Card key={sch.id}>
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex-1">
-                    <div className="flex items-start gap-2 flex-wrap">
-                      <h3 className="font-semibold text-[var(--color-text)]">{sch.name}</h3>
-                      {sch.eligibilityStatus === 'eligible' && (
-                        <Badge variant="success"><CheckCircle className="h-3 w-3 mr-1" />Eligible</Badge>
-                      )}
-                      {sch.eligibilityStatus === 'partial' && (
-                        <Badge variant="warning"><AlertCircle className="h-3 w-3 mr-1" />Partial</Badge>
-                      )}
-                    </div>
-                    <p className="text-xs text-[var(--color-text-muted)] mt-1">{sch.provider}</p>
-
-                    <div className="flex flex-wrap gap-4 mt-2">
-                      <span className="flex items-center gap-1 text-sm text-[var(--color-success)] font-semibold">
-                        <DollarSign className="h-3.5 w-3.5" />
-                        {formatIndianCurrency(sch.amount)}/year
-                      </span>
-                      <span className="flex items-center gap-1 text-xs text-[var(--color-text-secondary)]">
-                        <Calendar className="h-3.5 w-3.5" />
-                        Deadline: {formatDate(sch.deadline)}
-                        {days <= 30 && <span className="text-[var(--color-danger)]">({days}d left)</span>}
-                      </span>
-                    </div>
-
-                    <div className="mt-2">
-                      <p className="text-xs text-[var(--color-text-muted)] mb-1">Eligibility:</p>
-                      <ul className="space-y-0.5">
+              <Card key={sch.id} elevation={2} sx={{ borderRadius: '16px' }}>
+                <CardContent sx={{ p: 2.5 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 2 }}>
+                    <Box sx={{ flex: 1, minWidth: 0 }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap', mb: 0.5 }}>
+                        <Typography variant="body2" sx={{ fontWeight: 700 }}>{sch.name}</Typography>
+                        {sch.eligibilityStatus === 'eligible' && (
+                          <Chip
+                            icon={<CheckCircleIcon sx={{ fontSize: 12 }} />}
+                            label="Eligible"
+                            size="small"
+                            color="success"
+                            sx={{ fontSize: 10, height: 22 }}
+                          />
+                        )}
+                        {sch.eligibilityStatus === 'partial' && (
+                          <Chip
+                            icon={<ErrorOutlineIcon sx={{ fontSize: 12 }} />}
+                            label="Partial"
+                            size="small"
+                            color="warning"
+                            sx={{ fontSize: 10, height: 22 }}
+                          />
+                        )}
+                      </Box>
+                      <Typography sx={{ fontSize: 12, color: 'text.disabled', mb: 1.5 }}>{sch.provider}</Typography>
+                      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 1.5 }}>
+                        <Typography
+                          sx={{
+                            fontSize: 13,
+                            fontWeight: 700,
+                            color: 'success.main',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 0.5,
+                          }}
+                        >
+                          <CurrencyRupeeIcon sx={{ fontSize: 14 }} />
+                          {formatIndianCurrency(sch.amount)}/year
+                        </Typography>
+                        <Typography
+                          sx={{
+                            fontSize: 12,
+                            color: 'text.secondary',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 0.5,
+                          }}
+                        >
+                          <CalendarTodayIcon sx={{ fontSize: 13 }} />
+                          Deadline: {formatDate(sch.deadline)}
+                          {days <= 30 && (
+                            <Typography component="span" sx={{ color: 'error.main', fontSize: 12, ml: 0.5 }}>
+                              ({days}d left)
+                            </Typography>
+                          )}
+                        </Typography>
+                      </Box>
+                      <Box>
+                        <Typography sx={{ fontSize: 11, color: 'text.disabled', mb: 0.5 }}>Eligibility:</Typography>
                         {sch.eligibilityCriteria.slice(0, 2).map((c, i) => (
-                          <li key={i} className="text-xs text-[var(--color-text-secondary)]">• {c}</li>
+                          <Typography key={i} sx={{ fontSize: 12, color: 'text.secondary' }}>• {c}</Typography>
                         ))}
-                      </ul>
-                    </div>
-                  </div>
-                  {sch.applicationUrl && (
-                    <Button variant="outline" size="sm" asChild className="flex-shrink-0">
-                      <a href={sch.applicationUrl} target="_blank" rel="noopener noreferrer">
-                        Apply <ExternalLink className="h-3 w-3 ml-1" />
-                      </a>
-                    </Button>
-                  )}
-                </div>
+                      </Box>
+                    </Box>
+                    {sch.applicationUrl && (
+                      <Button
+                        variant="outlined"
+                        size="small"
+                        endIcon={<OpenInNewIcon sx={{ fontSize: 14 }} />}
+                        href={sch.applicationUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        component="a"
+                        sx={{ borderRadius: 2, flexShrink: 0, whiteSpace: 'nowrap' }}
+                      >
+                        Apply
+                      </Button>
+                    )}
+                  </Box>
+                </CardContent>
               </Card>
             );
           })}
-        </div>
+        </Box>
       )}
 
-      {tab === 'internships' && (
-        <div className="space-y-4">
-          {data?.internships.map(intern => {
-            const days = daysUntil(intern.deadline);
-            return (
-              <Card key={intern.id}>
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <h3 className="font-semibold text-[var(--color-text)]">{intern.role}</h3>
-                      {intern.isVerifiedEmployer && <Badge variant="success">✓ Verified</Badge>}
-                    </div>
-                    <p className="text-sm text-[var(--color-text-secondary)] mt-0.5">{intern.company}</p>
-
-                    <div className="flex flex-wrap gap-4 mt-2">
-                      <span className="text-sm font-semibold" style={{ color: intern.stipend > 0 ? 'var(--color-success)' : 'var(--color-text-muted)' }}>
+      {tab === 1 && (
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+          {data?.internships.map(intern => (
+            <Card key={intern.id} elevation={2} sx={{ borderRadius: '16px' }}>
+              <CardContent sx={{ p: 2.5 }}>
+                <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 2 }}>
+                  <Box sx={{ flex: 1, minWidth: 0 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap', mb: 0.5 }}>
+                      <Typography variant="body2" sx={{ fontWeight: 700 }}>{intern.role}</Typography>
+                      {intern.isVerifiedEmployer && (
+                        <Chip
+                          icon={<CheckCircleIcon sx={{ fontSize: 12 }} />}
+                          label="Verified"
+                          size="small"
+                          color="success"
+                          sx={{ fontSize: 10, height: 22 }}
+                        />
+                      )}
+                    </Box>
+                    <Typography sx={{ fontSize: 13, color: 'text.secondary', mb: 1.5 }}>{intern.company}</Typography>
+                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 1.5 }}>
+                      <Typography
+                        sx={{
+                          fontSize: 13,
+                          fontWeight: 700,
+                          color: intern.stipend > 0 ? 'success.main' : 'text.disabled',
+                        }}
+                      >
                         {intern.stipend > 0 ? `₹${intern.stipend.toLocaleString('en-IN')}/month` : 'Unpaid'}
-                      </span>
-                      <span className="text-xs text-[var(--color-text-secondary)]">{intern.duration}</span>
-                      <span className="text-xs capitalize px-2 py-0.5 rounded-full bg-[var(--color-surface-2)] text-[var(--color-text-secondary)]">{intern.mode}</span>
-                      <span className="text-xs text-[var(--color-text-muted)]">Deadline: {formatDate(intern.deadline)}</span>
-                    </div>
-
-                    <div className="flex flex-wrap gap-1 mt-2">
+                      </Typography>
+                      <Typography sx={{ fontSize: 12, color: 'text.secondary' }}>{intern.duration}</Typography>
+                      <Chip
+                        label={intern.mode}
+                        size="small"
+                        variant="outlined"
+                        sx={{ fontSize: 10, height: 22, textTransform: 'capitalize' }}
+                      />
+                      <Typography sx={{ fontSize: 12, color: 'text.disabled' }}>
+                        Deadline: {formatDate(intern.deadline)}
+                      </Typography>
+                    </Box>
+                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75 }}>
                       {intern.skillsRequired.map(s => (
-                        <Badge key={s} variant="default">{s}</Badge>
+                        <Chip key={s} label={s} size="small" variant="outlined" sx={{ fontSize: 10, height: 22 }} />
                       ))}
-                    </div>
-                  </div>
-                  <Button size="sm" className="flex-shrink-0">Apply</Button>
-                </div>
-              </Card>
-            );
-          })}
-        </div>
+                    </Box>
+                  </Box>
+                  <Button variant="contained" size="small" sx={{ borderRadius: 2, flexShrink: 0 }}>
+                    Apply
+                  </Button>
+                </Box>
+              </CardContent>
+            </Card>
+          ))}
+        </Box>
       )}
-    </div>
+    </Box>
   );
 }
