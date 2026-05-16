@@ -1,6 +1,13 @@
 import React from 'react';
-import * as Dialog from '@radix-ui/react-dialog';
-import { Button } from '@/components/ui/Button';
+import {
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Button,
+  Box,
+  Typography,
+} from '@mui/material';
 import { AlertTriangle } from 'lucide-react';
 
 interface ConfirmDialogProps {
@@ -26,37 +33,52 @@ export function ConfirmDialog({
   variant = 'danger',
   loading = false,
 }: ConfirmDialogProps) {
+  const confirmColor = variant === 'danger' ? 'error' : variant === 'warning' ? 'warning' : 'primary';
+
   return (
-    <Dialog.Root open={open} onOpenChange={(o) => !o && onClose()}>
-      <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <Dialog.Content className="bg-[var(--color-surface)] rounded-[var(--radius-lg)] shadow-[var(--shadow-lg)] p-6 max-w-sm w-full">
-            <div className="flex items-start gap-4">
-              <div className="w-10 h-10 rounded-full bg-[var(--color-danger-light)] flex items-center justify-center flex-shrink-0">
-                <AlertTriangle className="h-5 w-5 text-[var(--color-danger)]" />
-              </div>
-              <div>
-                <Dialog.Title className="text-base font-semibold text-[var(--color-text)] mb-2">
-                  {title}
-                </Dialog.Title>
-                {description && (
-                  <Dialog.Description className="text-sm text-[var(--color-text-secondary)]">
-                    {description}
-                  </Dialog.Description>
-                )}
-              </div>
-            </div>
-            <div className="flex gap-3 mt-6 justify-end">
-              <Button variant="secondary" size="sm" onClick={onClose} disabled={loading}>
-                {cancelLabel}
-              </Button>
-              <Button variant={variant === 'danger' ? 'danger' : 'primary'} size="sm" onClick={onConfirm} loading={loading}>
-                {confirmLabel}
-              </Button>
-            </div>
-          </Dialog.Content>
-        </Dialog.Overlay>
-      </Dialog.Portal>
-    </Dialog.Root>
+    <Dialog open={open} onClose={onClose} maxWidth="xs" fullWidth>
+      <DialogTitle sx={{ pb: 1 }}>
+        <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2 }}>
+          <Box
+            sx={{
+              width: 40,
+              height: 40,
+              borderRadius: '50%',
+              bgcolor: '#FEF2F2',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+            }}
+          >
+            <AlertTriangle size={20} color="#DC2626" />
+          </Box>
+          <Typography variant="subtitle1" sx={{ fontWeight: 600, pt: 0.5 }}>
+            {title}
+          </Typography>
+        </Box>
+      </DialogTitle>
+      {description && (
+        <DialogContent>
+          <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+            {description}
+          </Typography>
+        </DialogContent>
+      )}
+      <DialogActions sx={{ px: 3, pb: 2 }}>
+        <Button variant="outlined" size="small" onClick={onClose} disabled={loading}>
+          {cancelLabel}
+        </Button>
+        <Button
+          variant="contained"
+          size="small"
+          color={confirmColor as any}
+          onClick={onConfirm}
+          disabled={loading}
+        >
+          {confirmLabel}
+        </Button>
+      </DialogActions>
+    </Dialog>
   );
 }

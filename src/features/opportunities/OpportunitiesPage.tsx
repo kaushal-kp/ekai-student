@@ -21,7 +21,7 @@ export default function OpportunitiesPage() {
     queryFn: async () => (await api.get('/student/opportunities')).data.data,
   });
 
-  if (isLoading) return <LoadingSpinner className="mt-16" />;
+  if (isLoading) return <LoadingSpinner />;
 
   return (
     <div className="max-w-4xl">

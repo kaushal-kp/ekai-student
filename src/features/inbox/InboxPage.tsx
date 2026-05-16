@@ -1,130 +1,224 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { MessageSquare, User, Shield } from 'lucide-react';
-import { Card } from '@/components/ui/Card';
-import { Badge } from '@/components/ui/Badge';
+import Box from '@mui/material/Box';
+import Paper from '@mui/material/Paper';
+import List from '@mui/material/List';
+import ListItemButton from '@mui/material/ListItemButton';
+import Avatar from '@mui/material/Avatar';
+import Typography from '@mui/material/Typography';
+import IconButton from '@mui/material/IconButton';
+import Divider from '@mui/material/Divider';
+import useMediaQuery from '@mui/material/useMediaQuery';
+import Button from '@mui/material/Button';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import InboxIcon from '@mui/icons-material/Inbox';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { EmptyState } from '@/components/shared/EmptyState';
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
 import { formatRelativeTime } from '@/lib/formatters';
-import { cn } from '@/lib/utils';
 import api from '@/lib/api';
 import { InboxThread, InboxMessage } from '@/types/models';
 
+const SENDER_COLORS: Record<string, string> = {
+  admin: '#6366F1',
+  teacher: '#10B981',
+  system: '#9CA3AF',
+};
+
 function MessageBubble({ message }: { message: InboxMessage }) {
+  const isAlert = message.type === 'alert';
   return (
-    <div className={cn(
-      'p-3 rounded-[var(--radius-lg)] text-sm max-w-[85%]',
-      message.type === 'alert' ? 'bg-[var(--color-warning-light)] border border-[var(--color-warning)]/30 w-full max-w-full' : 'bg-[var(--color-surface-2)]'
-    )}>
-      <p className="text-[var(--color-text)] whitespace-pre-line">{message.content}</p>
+    <Box
+      sx={{
+        p: 1.5,
+        borderRadius: 2,
+        maxWidth: isAlert ? '100%' : '85%',
+        bgcolor: isAlert ? '#FEF3C7' : '#F1F5F9',
+        border: isAlert ? '1px solid rgba(245,158,11,0.3)' : 'none',
+      }}
+    >
+      <Typography variant="body2" sx={{ whiteSpace: 'pre-line' }}>
+        {message.content}
+      </Typography>
       {message.actionLabel && message.actionUrl && (
-        <a
+        <Typography
+          component="a"
           href={message.actionUrl}
-          className="inline-block mt-2 text-xs text-[var(--color-primary)] font-medium hover:underline"
+          variant="caption"
+          sx={{ display: 'inline-block', mt: 1, color: '#6366F1', fontWeight: 600, '&:hover': { textDecoration: 'underline' } }}
         >
           {message.actionLabel} →
-        </a>
+        </Typography>
       )}
-    </div>
+    </Box>
   );
 }
 
 export default function InboxPage() {
   const [selectedThread, setSelectedThread] = useState<InboxThread | null>(null);
+  const isMobile = useMediaQuery('(max-width:768px)');
 
   const { data: threads, isLoading } = useQuery<InboxThread[]>({
     queryKey: ['inbox'],
     queryFn: async () => (await api.get('/student/inbox')).data.data,
   });
 
-  if (isLoading) return <LoadingSpinner className="mt-16" />;
+  if (isLoading) return <LoadingSpinner />;
+
+  const showList = !isMobile || !selectedThread;
+  const showMessage = !isMobile || !!selectedThread;
 
   return (
-    <div className="max-w-5xl">
+    <Box sx={{ maxWidth: 960 }}>
       <PageHeader title="Inbox" />
 
-      <div className="flex gap-4 h-[calc(100vh-200px)]">
-        {/* Thread List */}
-        <div className={cn('w-full md:w-80 flex-shrink-0 space-y-2 overflow-y-auto', selectedThread && 'hidden md:block')}>
-          {!threads?.length ? (
-            <EmptyState emoji="📬" title="Inbox empty" />
-          ) : (
-            threads.map(thread => (
-              <div
-                key={thread.id}
-                onClick={() => setSelectedThread(thread)}
-                className={cn(
-                  'p-3 rounded-[var(--radius-lg)] border cursor-pointer transition-colors',
-                  selectedThread?.id === thread.id
-                    ? 'bg-[var(--color-primary-light)] border-[var(--color-primary)]/30'
-                    : 'bg-[var(--color-surface)] border-[var(--color-border)] hover:bg-[var(--color-surface-2)]'
-                )}
-              >
-                <div className="flex items-start gap-2">
-                  <div className={cn(
-                    'w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold text-white',
-                    thread.senderRole === 'admin' ? 'bg-[var(--color-primary)]' :
-                    thread.senderRole === 'teacher' ? 'bg-[var(--color-success)]' : 'bg-[var(--color-text-muted)]'
-                  )}>
-                    {thread.senderName[0]}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between gap-2">
-                      <p className="text-xs font-semibold text-[var(--color-text)] truncate">{thread.senderName}</p>
-                      {thread.unreadCount > 0 && (
-                        <span className="bg-[var(--color-primary)] text-white text-xs rounded-full px-1.5 min-w-[18px] text-center flex-shrink-0">
-                          {thread.unreadCount}
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-xs font-medium text-[var(--color-text)] truncate">{thread.subject}</p>
-                    <p className="text-xs text-[var(--color-text-muted)] truncate mt-0.5">{thread.lastMessage}</p>
-                    <p className="text-xs text-[var(--color-text-muted)] mt-0.5">{formatRelativeTime(thread.lastMessageAt)}</p>
-                  </div>
-                </div>
-              </div>
-            ))
-          )}
-        </div>
-
-        {/* Message View */}
-        <div className="flex-1 min-w-0">
-          {selectedThread ? (
-            <div className="h-full flex flex-col bg-[var(--color-surface)] rounded-[var(--radius-lg)] border border-[var(--color-border)]">
-              <div className="flex items-center gap-3 p-4 border-b border-[var(--color-border)]">
-                <button
-                  className="md:hidden text-[var(--color-primary)] text-sm font-medium"
-                  onClick={() => setSelectedThread(null)}
-                >
-                  ←
-                </button>
-                <div className="flex items-center gap-2 flex-1 min-w-0">
-                  <div className="w-8 h-8 rounded-full bg-[var(--color-primary)] flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
-                    {selectedThread.senderName[0]}
-                  </div>
-                  <div className="min-w-0">
-                    <p className="font-semibold text-sm text-[var(--color-text)] truncate">{selectedThread.senderName}</p>
-                    <p className="text-xs text-[var(--color-text-muted)] truncate">{selectedThread.subject}</p>
-                  </div>
-                </div>
-              </div>
-              <div className="flex-1 overflow-y-auto p-4 space-y-3">
-                {selectedThread.messages.map(msg => (
-                  <MessageBubble key={msg.id} message={msg} />
+      <Box sx={{ display: 'flex', gap: 2, height: 'calc(100vh - 200px)' }}>
+        {/* Thread list */}
+        {showList && (
+          <Box sx={{ width: isMobile ? '100%' : 320, flexShrink: 0, overflowY: 'auto' }}>
+            {!threads?.length ? (
+              <EmptyState emoji="📬" title="Inbox empty" />
+            ) : (
+              <List disablePadding sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                {threads.map(thread => (
+                  <ListItemButton
+                    key={thread.id}
+                    selected={selectedThread?.id === thread.id}
+                    onClick={() => setSelectedThread(thread)}
+                    sx={{
+                      borderRadius: 2,
+                      border: '1px solid',
+                      borderColor: selectedThread?.id === thread.id ? 'rgba(99,102,241,0.3)' : 'divider',
+                      bgcolor: thread.unreadCount > 0 ? '#FFFFFF' : '#F8FAFC',
+                      '&.Mui-selected': { bgcolor: 'rgba(99,102,241,0.08)' },
+                      '&:hover': { bgcolor: 'action.hover' },
+                      alignItems: 'flex-start',
+                      gap: 1.5,
+                      py: 1.5,
+                    }}
+                  >
+                    <Avatar
+                      sx={{
+                        width: 32,
+                        height: 32,
+                        fontSize: '0.75rem',
+                        fontWeight: 700,
+                        bgcolor: SENDER_COLORS[thread.senderRole] || '#9CA3AF',
+                        flexShrink: 0,
+                      }}
+                    >
+                      {thread.senderName[0]}
+                    </Avatar>
+                    <Box sx={{ flex: 1, minWidth: 0 }}>
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 1 }}>
+                        <Typography
+                          variant="caption"
+                          sx={{ fontWeight: thread.unreadCount > 0 ? 700 : 500 }}
+                          noWrap
+                        >
+                          {thread.senderName}
+                        </Typography>
+                        {thread.unreadCount > 0 && (
+                          <Box
+                            sx={{
+                              bgcolor: '#6366F1',
+                              color: 'white',
+                              borderRadius: '9999px',
+                              px: 0.75,
+                              minWidth: 18,
+                              textAlign: 'center',
+                              fontSize: '0.65rem',
+                              fontWeight: 700,
+                              flexShrink: 0,
+                            }}
+                          >
+                            {thread.unreadCount}
+                          </Box>
+                        )}
+                      </Box>
+                      <Typography variant="caption" sx={{ fontWeight: thread.unreadCount > 0 ? 600 : 400, display: "block" }} noWrap>
+                        {thread.subject}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary" noWrap sx={{ display: "block" }}>
+                        {thread.lastMessage}
+                      </Typography>
+                      <Typography variant="caption" color="text.disabled" sx={{ display: "block" }}>
+                        {formatRelativeTime(thread.lastMessageAt)}
+                      </Typography>
+                    </Box>
+                  </ListItemButton>
                 ))}
-              </div>
-            </div>
-          ) : (
-            <div className="h-full flex items-center justify-center bg-[var(--color-surface)] rounded-[var(--radius-lg)] border border-[var(--color-border)]">
-              <div className="text-center">
-                <MessageSquare className="h-12 w-12 text-[var(--color-text-muted)] mx-auto mb-3 opacity-30" />
-                <p className="text-sm text-[var(--color-text-secondary)]">Select a message to read</p>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
+              </List>
+            )}
+          </Box>
+        )}
+
+        {/* Message view */}
+        {showMessage && (
+          <Box sx={{ flex: 1, minWidth: 0 }}>
+            {selectedThread ? (
+              <Paper
+                elevation={2}
+                sx={{ height: '100%', display: 'flex', flexDirection: 'column', borderRadius: '16px', overflow: 'hidden' }}
+              >
+                <Box
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 1.5,
+                    p: 2,
+                    borderBottom: '1px solid',
+                    borderColor: 'divider',
+                  }}
+                >
+                  {isMobile && (
+                    <IconButton size="small" onClick={() => setSelectedThread(null)}>
+                      <ArrowBackIcon sx={{ fontSize: 'small' }} />
+                    </IconButton>
+                  )}
+                  <Avatar
+                    sx={{ width: 32, height: 32, fontSize: '0.75rem', fontWeight: 700, bgcolor: '#6366F1', flexShrink: 0 }}
+                  >
+                    {selectedThread.senderName[0]}
+                  </Avatar>
+                  <Box sx={{ minWidth: 0 }}>
+                    <Typography variant="body2" sx={{ fontWeight: 600 }} noWrap>
+                      {selectedThread.senderName}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary" noWrap sx={{ display: "block" }}>
+                      {selectedThread.subject}
+                    </Typography>
+                  </Box>
+                </Box>
+
+                <Box sx={{ flex: 1, overflowY: 'auto', p: 2, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                  {selectedThread.messages.map(msg => (
+                    <MessageBubble key={msg.id} message={msg} />
+                  ))}
+                </Box>
+              </Paper>
+            ) : (
+              <Paper
+                elevation={2}
+                sx={{
+                  height: '100%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  borderRadius: '16px',
+                }}
+              >
+                <Box sx={{ textAlign: 'center' }}>
+                  <InboxIcon sx={{ fontSize: 48, color: 'text.disabled', mb: 1.5 }} />
+                  <Typography variant="body2" color="text.secondary">
+                    Select a message to read
+                  </Typography>
+                </Box>
+              </Paper>
+            )}
+          </Box>
+        )}
+      </Box>
+    </Box>
   );
 }

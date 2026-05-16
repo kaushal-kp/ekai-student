@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react';
-import { motion, useMotionValue, useSpring, useTransform, animate } from 'framer-motion';
+import { motion, animate } from 'framer-motion';
 import { TrendingUp, TrendingDown } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { Card, CardContent, Chip, Box, Typography } from '@mui/material';
 
 interface StatCardProps {
   title: string;
@@ -41,94 +41,91 @@ export function StatCard({
   trend,
   trendLabel,
   gradient,
-  color,
-  className,
+  color = '#6366F1',
   onClick,
 }: StatCardProps) {
   const numericValue = typeof value === 'string' ? parseFloat(value) : value;
   const isNumeric = !isNaN(numericValue) && typeof numericValue === 'number';
   const suffix = typeof value === 'string' ? value.replace(/^[\d.]+/, '') : '';
+  const bgGradient = gradient || `linear-gradient(135deg, ${color} 0%, ${color}cc 100%)`;
 
   return (
     <motion.div
-      whileHover={{ y: -2, boxShadow: '0 12px 32px rgba(0,0,0,0.12)' }}
+      whileHover={{ y: -2 }}
       whileTap={{ scale: 0.98 }}
       onClick={onClick}
-      className={cn(
-        'relative overflow-hidden rounded-[16px] p-5 cursor-pointer group',
-        'bg-[var(--color-surface)] border border-[var(--color-border)]',
-        'shadow-[var(--shadow-sm)] transition-all duration-300',
-        className
-      )}
-      style={onClick ? { cursor: 'pointer' } : {}}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+      style={{ cursor: onClick ? 'pointer' : 'default' }}
     >
-      {/* Gradient hover border */}
-      <div
-        className="absolute inset-0 rounded-[16px] opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
-        style={{
-          background: gradient || `linear-gradient(135deg, ${color || 'var(--color-primary)'} 0%, ${color || 'var(--color-primary)'}80 100%)`,
-          padding: '1px',
-          zIndex: 0,
+      <Card
+        elevation={2}
+        sx={{
+          borderRadius: '16px',
+          transition: 'box-shadow 0.3s ease, transform 0.3s ease',
+          '&:hover': { boxShadow: 4, transform: 'translateY(-2px)' },
         }}
-      />
-      <div className="absolute inset-[1px] rounded-[15px] bg-[var(--color-surface)] opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
+      >
+        <CardContent sx={{ p: 3 }}>
+          <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', mb: 2 }}>
+            <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 500, fontSize: '0.8125rem' }}>
+              {title}
+            </Typography>
+            {icon && (
+              <Box
+                sx={{
+                  width: 48,
+                  height: 48,
+                  borderRadius: '12px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  background: bgGradient,
+                  flexShrink: 0,
+                  '& svg': { color: 'white', width: 20, height: 20 },
+                }}
+              >
+                {icon}
+              </Box>
+            )}
+          </Box>
 
-      {/* Content */}
-      <div className="relative z-10">
-        <div className="flex items-start justify-between mb-4">
-          <p className="text-[13px] font-medium text-[var(--color-text-secondary)] leading-tight">{title}</p>
-          {icon && (
-            <motion.div
-              whileHover={{ scale: 1.1, rotate: 5 }}
-              transition={{ type: 'spring', stiffness: 400 }}
-              className="w-10 h-10 rounded-[12px] flex items-center justify-center flex-shrink-0 shadow-sm"
-              style={{ background: gradient || `linear-gradient(135deg, ${color || 'var(--color-primary)'} 0%, ${color || '#9C8FFF'} 100%)` }}
-            >
-              <span className="text-white [&>svg]:h-4 [&>svg]:w-4">{icon}</span>
-            </motion.div>
-          )}
-        </div>
-
-        <div className="flex items-end gap-1 mb-1">
-          <p className="text-[28px] font-bold leading-none tracking-tight text-[var(--color-text)]">
+          <Typography sx={{ fontSize: 32, fontWeight: 800, lineHeight: 1, color: 'text.primary', mb: 0.5 }}>
             {isNumeric ? (
               <>
                 <AnimatedNumber value={numericValue} />
                 {suffix}
               </>
             ) : value}
-          </p>
-        </div>
+          </Typography>
 
-        {subtitle && (
-          <p className="text-[12px] text-[var(--color-text-muted)] mt-1">{subtitle}</p>
-        )}
+          {subtitle && (
+            <Typography variant="caption" sx={{ color: 'text.secondary' }}>{subtitle}</Typography>
+          )}
 
-        {trend !== undefined && (
-          <div className="flex items-center gap-1 mt-3">
-            <div
-              className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold"
-              style={{
-                background: trend > 0 ? 'var(--color-success-light)' : trend < 0 ? 'var(--color-danger-light)' : 'var(--color-surface-2)',
-                color: trend > 0 ? 'var(--color-success)' : trend < 0 ? 'var(--color-danger)' : 'var(--color-text-muted)',
-              }}
-            >
-              {trend > 0 ? <TrendingUp className="h-3 w-3" /> : trend < 0 ? <TrendingDown className="h-3 w-3" /> : null}
-              {trend > 0 ? '+' : ''}{trend}%
-            </div>
-            {trendLabel && <span className="text-[11px] text-[var(--color-text-muted)]">{trendLabel}</span>}
-          </div>
-        )}
-      </div>
-
-      {/* Bottom accent */}
-      <div
-        className="absolute bottom-0 left-0 right-0 h-[3px] rounded-b-[16px] opacity-60 group-hover:opacity-100 transition-opacity"
-        style={{ background: gradient || `linear-gradient(90deg, ${color || 'var(--color-primary)'}, transparent)` }}
-      />
+          {trend !== undefined && (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 1.5 }}>
+              <Chip
+                size="small"
+                icon={trend > 0 ? <TrendingUp size={12} /> : trend < 0 ? <TrendingDown size={12} /> : undefined}
+                label={`${trend > 0 ? '+' : ''}${trend}%`}
+                sx={{
+                  height: 22,
+                  fontSize: '0.6875rem',
+                  fontWeight: 700,
+                  bgcolor: trend > 0 ? '#F0FDF4' : trend < 0 ? '#FEF2F2' : 'grey.100',
+                  color: trend > 0 ? '#16A34A' : trend < 0 ? '#DC2626' : 'text.secondary',
+                  '& .MuiChip-icon': { fontSize: 12 },
+                }}
+              />
+              {trendLabel && (
+                <Typography variant="caption" sx={{ color: 'text.secondary' }}>{trendLabel}</Typography>
+              )}
+            </Box>
+          )}
+        </CardContent>
+      </Card>
     </motion.div>
   );
 }

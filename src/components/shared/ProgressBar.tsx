@@ -1,59 +1,35 @@
 import React from 'react';
-import { cn } from '@/lib/utils';
+import { Box, LinearProgress, Typography } from '@mui/material';
 
 interface ProgressBarProps {
   value: number;
   max?: number;
   color?: string;
-  height?: number;
-  showLabel?: boolean;
   label?: string;
-  className?: string;
-  animated?: boolean;
+  showLabel?: boolean;
+  height?: number;
 }
 
-export function ProgressBar({
-  value,
-  max = 100,
-  color,
-  height = 8,
-  showLabel = false,
-  label,
-  className,
-  animated = false,
-}: ProgressBarProps) {
-  const percent = Math.min(100, Math.max(0, (value / max) * 100));
-
-  const getDefaultColor = () => {
-    if (percent >= 75) return 'var(--color-success)';
-    if (percent >= 50) return 'var(--color-warning)';
-    return 'var(--color-danger)';
-  };
-
+export function ProgressBar({ value, max = 100, color = '#6366F1', label, showLabel = false, height = 8 }: ProgressBarProps) {
+  const percent = max !== 100 ? Math.min((value / max) * 100, 100) : Math.min(value, 100);
   return (
-    <div className={cn('w-full', className)}>
-      {(showLabel || label) && (
-        <div className="flex justify-between items-center mb-1">
-          <span className="text-xs text-[var(--color-text-secondary)]">{label}</span>
-          <span className="text-xs font-medium text-[var(--color-text)]">{Math.round(percent)}%</span>
-        </div>
+    <Box>
+      {(label || showLabel) && (
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
+          {label && <Typography variant="caption" sx={{ color: 'text.secondary' }}>{label}</Typography>}
+          {showLabel && <Typography variant="caption" sx={{ fontWeight: 700, color: 'text.primary' }}>{Math.round(percent)}%</Typography>}
+        </Box>
       )}
-      <div
-        className="w-full rounded-full overflow-hidden bg-[var(--color-surface-2)]"
-        style={{ height: `${height}px` }}
-        role="progressbar"
-        aria-valuenow={value}
-        aria-valuemin={0}
-        aria-valuemax={max}
-      >
-        <div
-          className={cn('h-full rounded-full transition-all duration-500', animated && 'animate-pulse')}
-          style={{
-            width: `${percent}%`,
-            backgroundColor: color || getDefaultColor(),
-          }}
-        />
-      </div>
-    </div>
+      <LinearProgress
+        variant="determinate"
+        value={percent}
+        sx={{
+          height,
+          borderRadius: 99,
+          bgcolor: 'rgba(0,0,0,0.06)',
+          '& .MuiLinearProgress-bar': { bgcolor: color },
+        }}
+      />
+    </Box>
   );
 }

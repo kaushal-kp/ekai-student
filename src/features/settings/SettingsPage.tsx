@@ -1,61 +1,73 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
-import {
-  Shield, Eye, Bell, Globe, Palette, ChevronRight, LogOut,
-  Moon, Sun, Laptop, Check
-} from 'lucide-react';
+import Box from '@mui/material/Box';
+import Card from '@mui/material/Card';
+import Typography from '@mui/material/Typography';
+import List from '@mui/material/List';
+import ListItem from '@mui/material/ListItem';
+import ListItemText from '@mui/material/ListItemText';
+import ListItemIcon from '@mui/material/ListItemIcon';
+import ListItemButton from '@mui/material/ListItemButton';
+import Switch from '@mui/material/Switch';
+import Select from '@mui/material/Select';
+import MenuItem from '@mui/material/MenuItem';
+import Button from '@mui/material/Button';
+import Divider from '@mui/material/Divider';
+import Avatar from '@mui/material/Avatar';
+import Snackbar from '@mui/material/Snackbar';
+import Alert from '@mui/material/Alert';
+import ShieldIcon from '@mui/icons-material/Shield';
+import VisibilityIcon from '@mui/icons-material/Visibility';
+import NotificationsIcon from '@mui/icons-material/Notifications';
+import GlobeIcon from '@mui/icons-material/Language';
+import PaletteIcon from '@mui/icons-material/Palette';
+import ChevronRightIcon from '@mui/icons-material/ChevronRight';
+import LogoutIcon from '@mui/icons-material/Logout';
+import LightModeIcon from '@mui/icons-material/LightMode';
+import DarkModeIcon from '@mui/icons-material/DarkMode';
+import DesktopWindowsIcon from '@mui/icons-material/DesktopWindows';
+import CheckIcon from '@mui/icons-material/Check';
 import { useAuthStore } from '@/store/authStore';
 import { useUIStore } from '@/store/uiStore';
 import { Theme, Language } from '@/types/enums';
 import { ROUTES } from '@/lib/constants';
 
-function ToggleSwitch({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) {
-  return (
-    <button
-      role="switch"
-      aria-checked={checked}
-      onClick={() => onChange(!checked)}
-      className="relative w-11 h-6 rounded-full transition-all duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2"
-      style={{ background: checked ? 'var(--color-primary)' : 'var(--color-border)' }}
-    >
-      <motion.div
-        animate={{ x: checked ? '100%' : '0%', translateX: checked ? '-2px' : '2px' }}
-        transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-        className="absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow-sm"
-      />
-    </button>
-  );
-}
+const themeOptions: { key: Theme; label: string; icon: React.ReactNode }[] = [
+  { key: Theme.LIGHT, label: 'Light', icon: <LightModeIcon sx={{ fontSize: 18 }} /> },
+  { key: Theme.DARK, label: 'Dark', icon: <DarkModeIcon sx={{ fontSize: 18 }} /> },
+  { key: Theme.SYSTEM, label: 'System', icon: <DesktopWindowsIcon sx={{ fontSize: 18 }} /> },
+];
 
-function SectionHeader({ label }: { label: string }) {
-  return (
-    <p className="text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-3 px-1">
-      {label}
-    </p>
-  );
-}
+const accountLinks = [
+  { label: 'Security', description: 'Password, 2FA, active sessions', icon: ShieldIcon, path: ROUTES.SETTINGS_SECURITY, color: '#6366F1', bg: '#EEF2FF' },
+  { label: 'Privacy & Data', description: 'Data rights, download your data', icon: VisibilityIcon, path: ROUTES.SETTINGS_PRIVACY, color: '#10B981', bg: '#D1FAE5' },
+  { label: 'Consent Manager', description: 'Manage data sharing consents', icon: NotificationsIcon, path: ROUTES.CONSENT, color: '#F59E0B', bg: '#FEF3C7' },
+];
 
-const stagger = { hidden: {}, show: { transition: { staggerChildren: 0.07 } } };
-const fadeUp = { hidden: { opacity: 0, y: 12 }, show: { opacity: 1, y: 0, transition: { duration: 0.3 } } };
+const notifOptions: { key: string; label: string; desc: string }[] = [
+  { key: 'examReminders', label: 'Exam Reminders', desc: 'Get notified before upcoming exams' },
+  { key: 'attendanceAlerts', label: 'Attendance Alerts', desc: 'Warnings when attendance drops below 75%' },
+  { key: 'leaveUpdates', label: 'Leave Updates', desc: 'Status updates on leave requests' },
+  { key: 'achievements', label: 'Achievements', desc: 'When you unlock new badges' },
+  { key: 'announcements', label: 'Announcements', desc: 'School circulars and notices' },
+];
 
 export default function SettingsPage() {
   const navigate = useNavigate();
   const { clearAuth } = useAuthStore();
   const { theme, setTheme, language, setLanguage } = useUIStore();
 
-  // Notification preferences (local state, would normally be persisted)
-  const [notifPrefs, setNotifPrefs] = useState({
+  const [notifPrefs, setNotifPrefs] = useState<Record<string, boolean>>({
     examReminders: true,
     attendanceAlerts: true,
     leaveUpdates: true,
     achievements: true,
     announcements: true,
   });
-  const [hasChanges, setHasChanges] = useState(false);
   const [savedNotifPrefs] = useState({ ...notifPrefs });
+  const [hasChanges, setHasChanges] = useState(false);
+  const [snackOpen, setSnackOpen] = useState(false);
 
-  // Track changes
   useEffect(() => {
     const changed = JSON.stringify(notifPrefs) !== JSON.stringify(savedNotifPrefs);
     setHasChanges(changed);
@@ -66,207 +78,205 @@ export default function SettingsPage() {
     navigate(ROUTES.LOGIN);
   };
 
-  const themeOptions: { key: Theme; label: string; icon: React.ReactNode }[] = [
-    { key: Theme.LIGHT, label: 'Light', icon: <Sun className="h-4 w-4" /> },
-    { key: Theme.DARK, label: 'Dark', icon: <Moon className="h-4 w-4" /> },
-    { key: Theme.SYSTEM, label: 'System', icon: <Laptop className="h-4 w-4" /> },
-  ];
-
-  const accountLinks = [
-    { label: 'Security', description: 'Password, 2FA, active sessions', icon: Shield, path: ROUTES.SETTINGS_SECURITY, color: '#6C63FF', bg: '#EEEDFF' },
-    { label: 'Privacy & Data', description: 'Data rights, download your data', icon: Eye, path: ROUTES.SETTINGS_PRIVACY, color: '#10B981', bg: '#D1FAF0' },
-    { label: 'Consent Manager', description: 'Manage data sharing consents', icon: Bell, path: ROUTES.CONSENT, color: '#F59E0B', bg: '#FEF3C7' },
-  ];
-
-  const notifOptions: { key: keyof typeof notifPrefs; label: string; desc: string }[] = [
-    { key: 'examReminders', label: 'Exam Reminders', desc: 'Get notified before upcoming exams' },
-    { key: 'attendanceAlerts', label: 'Attendance Alerts', desc: 'Warnings when attendance drops below 75%' },
-    { key: 'leaveUpdates', label: 'Leave Updates', desc: 'Status updates on leave requests' },
-    { key: 'achievements', label: 'Achievements', desc: 'When you unlock new badges' },
-    { key: 'announcements', label: 'Announcements', desc: 'School circulars and notices' },
-  ];
-
   return (
-    <div className="max-w-2xl space-y-8">
-      <div>
-        <h1 className="text-[22px] font-bold text-[var(--color-text)]">Settings</h1>
-        <p className="text-[13px] text-[var(--color-text-muted)] mt-0.5">Manage your account, appearance, and notification preferences</p>
-      </div>
+    <Box sx={{ maxWidth: 640 }}>
+      <Box sx={{ mb: 3 }}>
+        <Typography variant="h5" sx={{ fontWeight: 700 }}>Settings</Typography>
+        <Typography variant="caption" color="text.secondary">
+          Manage your account, appearance, and notification preferences
+        </Typography>
+      </Box>
 
-      <motion.div variants={stagger} initial="hidden" animate="show" className="space-y-8">
-        {/* Appearance */}
-        <motion.div variants={fadeUp}>
-          <SectionHeader label="Appearance" />
-          <div className="rounded-[20px] overflow-hidden bg-[var(--color-surface)] border border-[var(--color-border)] shadow-[var(--shadow-sm)] divide-y divide-[var(--color-border)]">
-            {/* Theme */}
-            <div className="p-5">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-9 h-9 rounded-[10px] flex items-center justify-center"
-                  style={{ background: 'linear-gradient(135deg, #6C63FF, #9C8FFF)' }}>
-                  <Palette className="h-4 w-4 text-white" />
-                </div>
-                <div>
-                  <p className="text-[14px] font-semibold text-[var(--color-text)]">Theme</p>
-                  <p className="text-[12px] text-[var(--color-text-muted)]">Choose your display preference</p>
-                </div>
-              </div>
-              <div className="grid grid-cols-3 gap-2">
-                {themeOptions.map(opt => (
-                  <button
-                    key={opt.key}
-                    onClick={() => setTheme(opt.key)}
-                    className="flex flex-col items-center gap-2 p-4 rounded-[14px] border-2 transition-all"
-                    style={theme === opt.key ? {
-                      background: 'var(--color-primary-light)',
-                      borderColor: 'var(--color-primary)',
-                    } : {
-                      background: 'var(--color-surface-2)',
-                      borderColor: 'transparent',
-                    }}
-                  >
-                    <div className="relative">
-                      <span style={{ color: theme === opt.key ? 'var(--color-primary)' : 'var(--color-text-secondary)' }}>
-                        {opt.icon}
-                      </span>
-                      {theme === opt.key && (
-                        <motion.div
-                          initial={{ scale: 0 }}
-                          animate={{ scale: 1 }}
-                          className="absolute -top-1 -right-1 w-3 h-3 rounded-full flex items-center justify-center"
-                          style={{ background: 'var(--color-primary)' }}
-                        >
-                          <Check className="h-2 w-2 text-white" />
-                        </motion.div>
-                      )}
-                    </div>
-                    <span className="text-[12px] font-semibold"
-                      style={{ color: theme === opt.key ? 'var(--color-primary)' : 'var(--color-text-secondary)' }}>
-                      {opt.label}
-                    </span>
-                  </button>
-                ))}
-              </div>
-            </div>
+      {/* Appearance */}
+      <Box sx={{ mb: 4 }}>
+        <Typography variant="overline" color="text.secondary" sx={{ fontWeight: 700, display: 'block', mb: 1.5, px: 0.5 }}>
+          Appearance
+        </Typography>
+        <Card elevation={2} sx={{ borderRadius: '16px', overflow: 'hidden' }}>
+          {/* Theme */}
+          <Box sx={{ p: 2.5 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
+              <Avatar sx={{ width: 36, height: 36, borderRadius: '10px', background: 'linear-gradient(135deg, #6366F1, #9C8FFF)' }}>
+                <PaletteIcon sx={{ fontSize: 18 }} />
+              </Avatar>
+              <Box>
+                <Typography variant="body2" sx={{ fontWeight: 600 }}>Theme</Typography>
+                <Typography variant="caption" color="text.secondary">Choose your display preference</Typography>
+              </Box>
+            </Box>
+            <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 1 }}>
+              {themeOptions.map(opt => (
+                <Box
+                  key={opt.key}
+                  onClick={() => setTheme(opt.key)}
+                  sx={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: 1,
+                    p: 2,
+                    borderRadius: 2,
+                    border: '2px solid',
+                    borderColor: theme === opt.key ? '#6366F1' : 'transparent',
+                    bgcolor: theme === opt.key ? 'rgba(99,102,241,0.08)' : 'action.hover',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s',
+                    '&:hover': { bgcolor: 'action.selected' },
+                  }}
+                >
+                  <Box sx={{ position: 'relative' }}>
+                    <Box sx={{ color: theme === opt.key ? '#6366F1' : 'text.secondary' }}>{opt.icon}</Box>
+                    {theme === opt.key && (
+                      <Box
+                        sx={{
+                          position: 'absolute',
+                          top: -4,
+                          right: -4,
+                          width: 12,
+                          height: 12,
+                          borderRadius: '50%',
+                          bgcolor: '#6366F1',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                        }}
+                      >
+                        <CheckIcon sx={{ fontSize: 8, color: 'white' }} />
+                      </Box>
+                    )}
+                  </Box>
+                  <Typography variant="caption" sx={{ fontWeight: 600 }} color={theme === opt.key ? 'primary' : 'text.secondary'}>
+                    {opt.label}
+                  </Typography>
+                </Box>
+              ))}
+            </Box>
+          </Box>
 
-            {/* Language */}
-            <div className="p-5 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-[10px] flex items-center justify-center"
-                  style={{ background: 'linear-gradient(135deg, #F59E0B, #FCD34D)' }}>
-                  <Globe className="h-4 w-4 text-white" />
-                </div>
-                <div>
-                  <p className="text-[14px] font-semibold text-[var(--color-text)]">Language</p>
-                  <p className="text-[12px] text-[var(--color-text-muted)]">Display language for the app</p>
-                </div>
-              </div>
-              <div className="flex gap-1.5 p-1 rounded-[10px] bg-[var(--color-surface-2)]">
-                {([['en', 'English'], ['hi', 'हिंदी']] as [Language, string][]).map(([v, l]) => (
-                  <button
-                    key={v}
-                    onClick={() => setLanguage(v)}
-                    className="px-3 py-1.5 rounded-[8px] text-[12px] font-semibold transition-all"
-                    style={language === v ? {
-                      background: 'var(--color-surface)',
-                      color: 'var(--color-primary)',
-                      boxShadow: 'var(--shadow-sm)',
-                    } : {
-                      color: 'var(--color-text-secondary)',
-                    }}
-                  >
-                    {l}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-        </motion.div>
+          <Divider />
 
-        {/* Notifications */}
-        <motion.div variants={fadeUp}>
-          <SectionHeader label="Notifications" />
-          <div className="rounded-[20px] overflow-hidden bg-[var(--color-surface)] border border-[var(--color-border)] shadow-[var(--shadow-sm)] divide-y divide-[var(--color-border)]">
-            {notifOptions.map(opt => (
-              <div key={opt.key} className="p-4 flex items-center justify-between gap-4">
-                <div className="flex-1 min-w-0">
-                  <p className="text-[13px] font-semibold text-[var(--color-text)]">{opt.label}</p>
-                  <p className="text-[11px] text-[var(--color-text-muted)] mt-0.5">{opt.desc}</p>
-                </div>
-                <ToggleSwitch
-                  checked={notifPrefs[opt.key]}
-                  onChange={v => setNotifPrefs(p => ({ ...p, [opt.key]: v }))}
-                />
-              </div>
-            ))}
-          </div>
-
-          <AnimatePresence>
-            {hasChanges && (
-              <motion.div
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 8 }}
-                className="mt-3 flex items-center justify-between px-4 py-3 rounded-[12px] border"
-                style={{ background: 'var(--color-primary-light)', borderColor: 'var(--color-primary)' + '40' }}
+          {/* Language */}
+          <ListItem
+            secondaryAction={
+              <Select
+                value={language}
+                onChange={e => setLanguage(e.target.value as Language)}
+                size="small"
+                sx={{ minWidth: 120, borderRadius: 2 }}
               >
-                <p className="text-[12px] font-medium text-[var(--color-primary)]">You have unsaved changes</p>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => setNotifPrefs({ ...savedNotifPrefs })}
-                    className="text-[12px] font-semibold text-[var(--color-text-secondary)] hover:text-[var(--color-text)] transition-colors"
-                  >
-                    Discard
-                  </button>
-                  <button
-                    className="text-[12px] font-bold text-[var(--color-primary)] hover:underline"
-                    onClick={() => setHasChanges(false)}
-                  >
-                    Save
-                  </button>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </motion.div>
-
-        {/* Account */}
-        <motion.div variants={fadeUp}>
-          <SectionHeader label="Account" />
-          <div className="rounded-[20px] overflow-hidden bg-[var(--color-surface)] border border-[var(--color-border)] shadow-[var(--shadow-sm)] divide-y divide-[var(--color-border)]">
-            {accountLinks.map(item => (
-              <button
-                key={item.path}
-                onClick={() => navigate(item.path)}
-                className="w-full flex items-center gap-3 p-4 hover:bg-[var(--color-surface-2)] transition-colors text-left group"
-              >
-                <div className="w-9 h-9 rounded-[10px] flex items-center justify-center flex-shrink-0"
-                  style={{ background: item.bg }}>
-                  <item.icon className="h-4 w-4" style={{ color: item.color }} />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-[13px] font-semibold text-[var(--color-text)]">{item.label}</p>
-                  <p className="text-[11px] text-[var(--color-text-muted)]">{item.description}</p>
-                </div>
-                <ChevronRight className="h-4 w-4 text-[var(--color-text-muted)] group-hover:text-[var(--color-text)] group-hover:translate-x-0.5 transition-all" />
-              </button>
-            ))}
-          </div>
-        </motion.div>
-
-        {/* Sign out */}
-        <motion.div variants={fadeUp}>
-          <button
-            onClick={handleLogout}
-            className="w-full flex items-center gap-3 p-4 rounded-[16px] transition-all group hover:opacity-90"
-            style={{ background: 'linear-gradient(135deg, #EF4444, #F87171)' }}
+                <MenuItem value="en">English</MenuItem>
+                <MenuItem value="hi">हिंदी</MenuItem>
+              </Select>
+            }
+            sx={{ py: 1.5 }}
           >
-            <div className="w-9 h-9 rounded-[10px] flex items-center justify-center bg-white/20">
-              <LogOut className="h-4 w-4 text-white" />
-            </div>
-            <span className="text-[14px] font-semibold text-white">Sign Out</span>
-          </button>
-        </motion.div>
-      </motion.div>
-    </div>
+            <ListItemIcon sx={{ minWidth: 44 }}>
+              <Avatar sx={{ width: 36, height: 36, borderRadius: '10px', background: 'linear-gradient(135deg, #F59E0B, #FCD34D)' }}>
+                <GlobeIcon sx={{ fontSize: 18 }} />
+              </Avatar>
+            </ListItemIcon>
+            <ListItemText
+              primary={<Typography variant="body2" sx={{ fontWeight: 600 }}>Language</Typography>}
+              secondary={<Typography variant="caption" color="text.secondary">Display language for the app</Typography>}
+            />
+          </ListItem>
+        </Card>
+      </Box>
+
+      {/* Notifications */}
+      <Box sx={{ mb: 4 }}>
+        <Typography variant="overline" color="text.secondary" sx={{ fontWeight: 700, display: 'block', mb: 1.5, px: 0.5 }}>
+          Notifications
+        </Typography>
+        <Card elevation={2} sx={{ borderRadius: '16px', overflow: 'hidden' }}>
+          <List disablePadding>
+            {notifOptions.map((opt, i) => (
+              <React.Fragment key={opt.key}>
+                {i > 0 && <Divider />}
+                <ListItem
+                  secondaryAction={
+                    <Switch
+                      checked={!!notifPrefs[opt.key]}
+                      onChange={e => setNotifPrefs(p => ({ ...p, [opt.key]: e.target.checked }))}
+                      sx={{ '& .MuiSwitch-switchBase.Mui-checked': { color: '#6366F1' }, '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': { bgcolor: '#6366F1' } }}
+                    />
+                  }
+                  sx={{ py: 1.5 }}
+                >
+                  <ListItemText
+                    primary={<Typography variant="body2" sx={{ fontWeight: 600 }}>{opt.label}</Typography>}
+                    secondary={<Typography variant="caption" color="text.secondary">{opt.desc}</Typography>}
+                  />
+                </ListItem>
+              </React.Fragment>
+            ))}
+          </List>
+        </Card>
+
+        {hasChanges && (
+          <Alert
+            severity="info"
+            sx={{ mt: 1.5, borderRadius: 2 }}
+            action={
+              <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                <Button size="small" color="inherit" onClick={() => setNotifPrefs({ ...savedNotifPrefs })}>
+                  Discard
+                </Button>
+                <Button size="small" color="primary" sx={{ fontWeight: 700 }} onClick={() => setSnackOpen(true)}>
+                  Save
+                </Button>
+              </Box>
+            }
+          >
+            You have unsaved changes
+          </Alert>
+        )}
+      </Box>
+
+      {/* Account */}
+      <Box sx={{ mb: 4 }}>
+        <Typography variant="overline" color="text.secondary" sx={{ fontWeight: 700, display: 'block', mb: 1.5, px: 0.5 }}>
+          Account
+        </Typography>
+        <Card elevation={2} sx={{ borderRadius: '16px', overflow: 'hidden' }}>
+          <List disablePadding>
+            {accountLinks.map((item, i) => (
+              <React.Fragment key={item.path}>
+                {i > 0 && <Divider />}
+                <ListItemButton onClick={() => navigate(item.path)} sx={{ py: 1.5 }}>
+                  <ListItemIcon sx={{ minWidth: 44 }}>
+                    <Avatar sx={{ width: 36, height: 36, borderRadius: '10px', bgcolor: item.bg }}>
+                      <item.icon sx={{ fontSize: 18, color: item.color }} />
+                    </Avatar>
+                  </ListItemIcon>
+                  <ListItemText
+                    primary={<Typography variant="body2" sx={{ fontWeight: 600 }}>{item.label}</Typography>}
+                    secondary={<Typography variant="caption" color="text.secondary">{item.description}</Typography>}
+                  />
+                  <ChevronRightIcon sx={{ color: 'text.disabled', fontSize: 18 }} />
+                </ListItemButton>
+              </React.Fragment>
+            ))}
+          </List>
+        </Card>
+      </Box>
+
+      {/* Sign out */}
+      <Button
+        fullWidth
+        variant="contained"
+        color="error"
+        size="large"
+        startIcon={<LogoutIcon />}
+        onClick={handleLogout}
+        sx={{ borderRadius: 2, py: 1.5 }}
+      >
+        Sign Out
+      </Button>
+
+      <Snackbar open={snackOpen} autoHideDuration={2000} onClose={() => setSnackOpen(false)}>
+        <Alert severity="success" onClose={() => setSnackOpen(false)}>Preferences saved</Alert>
+      </Snackbar>
+    </Box>
   );
 }

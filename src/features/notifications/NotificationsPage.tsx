@@ -1,27 +1,38 @@
 import React from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { motion, AnimatePresence } from 'framer-motion';
-import { CheckCheck, Bell, Award, AlertTriangle, BookOpen, CalendarCheck, MessageSquare } from 'lucide-react';
+import Box from '@mui/material/Box';
+import Typography from '@mui/material/Typography';
+import Button from '@mui/material/Button';
+import List from '@mui/material/List';
+import ListItemButton from '@mui/material/ListItemButton';
+import Avatar from '@mui/material/Avatar';
+import Badge from '@mui/material/Badge';
+import DoneAllIcon from '@mui/icons-material/DoneAll';
+import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
+import WarningAmberIcon from '@mui/icons-material/WarningAmber';
+import MenuBookIcon from '@mui/icons-material/MenuBook';
+import EventAvailableIcon from '@mui/icons-material/EventAvailable';
+import NotificationsIcon from '@mui/icons-material/Notifications';
+import ChatBubbleIcon from '@mui/icons-material/ChatBubble';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { EmptyState } from '@/components/shared/EmptyState';
 import { useUIStore } from '@/store/uiStore';
 import { formatRelativeTime } from '@/lib/formatters';
-import { cn } from '@/lib/utils';
 import api from '@/lib/api';
 import { Notification } from '@/types/models';
 import { NotificationType } from '@/types/enums';
 import { isToday, isYesterday, isThisWeek, parseISO } from 'date-fns';
 
 const TYPE_CONFIG: Record<NotificationType, { icon: React.ReactNode; color: string; bg: string }> = {
-  [NotificationType.ACHIEVEMENT]: { icon: <Award className="h-4 w-4" />, color: '#F59E0B', bg: '#FEF3C7' },
-  [NotificationType.ATTENDANCE_WARNING]: { icon: <AlertTriangle className="h-4 w-4" />, color: '#EF4444', bg: '#FEE2E2' },
-  [NotificationType.EXAM_RESULT]: { icon: <BookOpen className="h-4 w-4" />, color: '#6C63FF', bg: '#EEEDFF' },
-  [NotificationType.LEAVE_APPROVED]: { icon: <CalendarCheck className="h-4 w-4" />, color: '#10B981', bg: '#D1FAF0' },
-  [NotificationType.LEAVE_REJECTED]: { icon: <CalendarCheck className="h-4 w-4" />, color: '#EF4444', bg: '#FEE2E2' },
-  [NotificationType.CIRCULAR]: { icon: <Bell className="h-4 w-4" />, color: '#3B82F6', bg: '#DBEAFE' },
-  [NotificationType.MESSAGE]: { icon: <MessageSquare className="h-4 w-4" />, color: '#8B5CF6', bg: '#EDE9FE' },
-  [NotificationType.PROFILE_VIEWED]: { icon: <Bell className="h-4 w-4" />, color: '#10B981', bg: '#D1FAF0' },
-  [NotificationType.READINESS_UPDATE]: { icon: <BookOpen className="h-4 w-4" />, color: '#F97316', bg: '#FFF7ED' },
+  [NotificationType.ACHIEVEMENT]: { icon: <EmojiEventsIcon sx={{ fontSize: 16 }} />, color: '#F59E0B', bg: '#FEF3C7' },
+  [NotificationType.ATTENDANCE_WARNING]: { icon: <WarningAmberIcon sx={{ fontSize: 16 }} />, color: '#EF4444', bg: '#FEE2E2' },
+  [NotificationType.EXAM_RESULT]: { icon: <MenuBookIcon sx={{ fontSize: 16 }} />, color: '#6366F1', bg: '#EEF2FF' },
+  [NotificationType.LEAVE_APPROVED]: { icon: <EventAvailableIcon sx={{ fontSize: 16 }} />, color: '#10B981', bg: '#D1FAE5' },
+  [NotificationType.LEAVE_REJECTED]: { icon: <EventAvailableIcon sx={{ fontSize: 16 }} />, color: '#EF4444', bg: '#FEE2E2' },
+  [NotificationType.CIRCULAR]: { icon: <NotificationsIcon sx={{ fontSize: 16 }} />, color: '#3B82F6', bg: '#DBEAFE' },
+  [NotificationType.MESSAGE]: { icon: <ChatBubbleIcon sx={{ fontSize: 16 }} />, color: '#8B5CF6', bg: '#EDE9FE' },
+  [NotificationType.PROFILE_VIEWED]: { icon: <NotificationsIcon sx={{ fontSize: 16 }} />, color: '#10B981', bg: '#D1FAE5' },
+  [NotificationType.READINESS_UPDATE]: { icon: <MenuBookIcon sx={{ fontSize: 16 }} />, color: '#F97316', bg: '#FFF7ED' },
 };
 
 function groupNotifications(notifications: Notification[]) {
@@ -46,9 +57,6 @@ function groupNotifications(notifications: Notification[]) {
   ].filter(g => g.items.length > 0);
 }
 
-const stagger = { hidden: {}, show: { transition: { staggerChildren: 0.05 } } };
-const fadeUp = { hidden: { opacity: 0, y: 12 }, show: { opacity: 1, y: 0, transition: { duration: 0.3 } } };
-
 export default function NotificationsPage() {
   const { addToast } = useUIStore();
   const qc = useQueryClient();
@@ -70,93 +78,117 @@ export default function NotificationsPage() {
   const groups = notifications ? groupNotifications(notifications) : [];
 
   return (
-    <div className="max-w-2xl space-y-6">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-[22px] font-bold text-[var(--color-text)]">Notifications</h1>
-          <p className="text-[13px] text-[var(--color-text-muted)] mt-0.5">
+    <Box sx={{ maxWidth: 672 }}>
+      <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 2, mb: 3 }}>
+        <Box>
+          <Typography variant="h5" sx={{ fontWeight: 700 }}>Notifications</Typography>
+          <Typography variant="caption" color="text.secondary">
             {unreadCount > 0 ? `${unreadCount} unread notification${unreadCount > 1 ? 's' : ''}` : 'All caught up!'}
-          </p>
-        </div>
+          </Typography>
+        </Box>
         {unreadCount > 0 && (
-          <button
+          <Button
+            variant="outlined"
+            size="small"
+            startIcon={<DoneAllIcon />}
             onClick={() => markAllRead.mutate()}
             disabled={markAllRead.isPending}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-[10px] text-[12px] font-semibold text-[var(--color-primary)] border border-[var(--color-primary)]/30 hover:bg-[var(--color-primary-light)] transition-all disabled:opacity-50"
+            sx={{ borderRadius: 2, flexShrink: 0 }}
           >
-            <CheckCheck className="h-4 w-4" />
             Mark all read
-          </button>
+          </Button>
         )}
-      </div>
+      </Box>
 
       {isLoading ? (
-        <div className="space-y-3">
-          {[1, 2, 3, 4, 5].map(i => <div key={i} className="skeleton h-16 rounded-[16px]" />)}
-        </div>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+          {[1, 2, 3, 4, 5].map(i => (
+            <Box key={i} sx={{ height: 64, borderRadius: 2, bgcolor: 'action.hover', animation: 'pulse 1.5s infinite' }} />
+          ))}
+        </Box>
       ) : !notifications?.length ? (
-        <div className="flex flex-col items-center justify-center py-20">
-          <span className="text-[56px] mb-4">🔔</span>
-          <p className="text-[16px] font-semibold text-[var(--color-text)]">No notifications yet</p>
-          <p className="text-[13px] text-[var(--color-text-muted)] mt-1">You're all caught up! We'll notify you of important updates.</p>
-        </div>
+        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', py: 10 }}>
+          <Typography sx={{ fontSize: 56, mb: 2 }}>🔔</Typography>
+          <Typography variant="h6" sx={{ fontWeight: 600 }}>No notifications yet</Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+            You're all caught up! We'll notify you of important updates.
+          </Typography>
+        </Box>
       ) : (
-        <motion.div variants={stagger} initial="hidden" animate="show" className="space-y-6">
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
           {groups.map(group => (
-            <div key={group.label}>
-              <p className="text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-3 px-1">
+            <Box key={group.label}>
+              <Typography
+                variant="overline"
+                sx={{ fontWeight: 700, color: 'text.secondary', display: 'block', mb: 1.5, px: 0.5 }}
+              >
                 {group.label}
-              </p>
-              <div className="space-y-2">
+              </Typography>
+              <List disablePadding sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
                 {group.items.map(notif => {
                   const typeConfig = TYPE_CONFIG[notif.type] || {
-                    icon: <Bell className="h-4 w-4" />,
+                    icon: <NotificationsIcon sx={{ fontSize: 16 }} />,
                     color: '#6B7280',
                     bg: '#F3F4F6',
                   };
                   return (
-                    <motion.div
+                    <ListItemButton
                       key={notif.id}
-                      variants={fadeUp}
-                      className="flex items-start gap-4 p-4 rounded-[16px] border transition-all cursor-pointer group"
-                      style={{
-                        background: !notif.isRead ? 'var(--color-primary-light)' : 'var(--color-surface)',
-                        borderColor: !notif.isRead ? 'var(--color-primary)' + '30' : 'var(--color-border)',
+                      sx={{
+                        borderRadius: 2,
+                        border: '1px solid',
+                        borderColor: !notif.isRead ? 'rgba(99,102,241,0.3)' : 'divider',
+                        bgcolor: !notif.isRead ? 'rgba(99,102,241,0.06)' : 'background.paper',
+                        gap: 2,
+                        alignItems: 'flex-start',
+                        py: 1.5,
+                        '&:hover': { bgcolor: 'action.hover' },
                       }}
-                      whileHover={{ y: -1 }}
                     >
-                      {/* Icon */}
-                      <div
-                        className="w-10 h-10 rounded-[12px] flex items-center justify-center flex-shrink-0"
-                        style={{ background: typeConfig.bg, color: typeConfig.color }}
+                      <Avatar
+                        sx={{
+                          width: 40,
+                          height: 40,
+                          borderRadius: '12px',
+                          bgcolor: typeConfig.bg,
+                          color: typeConfig.color,
+                          flexShrink: 0,
+                        }}
                       >
                         {typeConfig.icon}
-                      </div>
-
-                      {/* Content */}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <p className="text-[13px] font-semibold text-[var(--color-text)]">{notif.title}</p>
+                      </Avatar>
+                      <Box sx={{ flex: 1, minWidth: 0 }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <Typography variant="body2" sx={{ fontWeight: 600 }} noWrap>
+                            {notif.title}
+                          </Typography>
                           {!notif.isRead && (
-                            <span className="w-2 h-2 rounded-full flex-shrink-0"
-                              style={{ background: 'var(--color-primary)' }} />
+                            <Box
+                              sx={{
+                                width: 8,
+                                height: 8,
+                                borderRadius: '50%',
+                                bgcolor: '#6366F1',
+                                flexShrink: 0,
+                              }}
+                            />
                           )}
-                        </div>
-                        <p className="text-[12px] text-[var(--color-text-secondary)] mt-0.5 leading-relaxed">
+                        </Box>
+                        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.25, lineHeight: 1.5 }}>
                           {notif.description}
-                        </p>
-                        <p className="text-[11px] text-[var(--color-text-muted)] mt-1.5">
+                        </Typography>
+                        <Typography variant="caption" color="text.disabled" sx={{ display: 'block', mt: 0.75 }}>
                           {formatRelativeTime(notif.createdAt)}
-                        </p>
-                      </div>
-                    </motion.div>
+                        </Typography>
+                      </Box>
+                    </ListItemButton>
                   );
                 })}
-              </div>
-            </div>
+              </List>
+            </Box>
           ))}
-        </motion.div>
+        </Box>
       )}
-    </div>
+    </Box>
   );
 }

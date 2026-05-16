@@ -34,7 +34,7 @@ export default function ConsentPage() {
     onError: (err: any) => addToast({ type: 'error', title: 'Failed', description: err.message }),
   });
 
-  if (isLoading) return <LoadingSpinner className="mt-16" />;
+  if (isLoading) return <LoadingSpinner />;
 
   const active = consents?.filter(c => c.status === ConsentStatus.ACTIVE) || [];
   const expired = consents?.filter(c => c.status !== ConsentStatus.ACTIVE) || [];

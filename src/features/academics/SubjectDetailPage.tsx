@@ -1,12 +1,21 @@
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { ArrowLeft, Mail, TrendingUp } from 'lucide-react';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
+import { ArrowLeft, Mail } from 'lucide-react';
+import {
+  Box,
+  Button,
+  Card,
+  CardContent,
+  CardHeader,
+  Chip,
+  Grid,
+  Stack,
+  Typography,
+} from '@mui/material';
 import { ProgressBar } from '@/components/shared/ProgressBar';
 import { RiskBadge } from '@/components/shared/RiskBadge';
 import { PageHeader } from '@/components/shared/PageHeader';
-import { Button } from '@/components/ui/Button';
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
 import api from '@/lib/api';
 import { Subject } from '@/types/models';
@@ -20,84 +29,145 @@ export default function SubjectDetailPage() {
     queryFn: async () => (await api.get(`/student/subjects/${subjectId}`)).data.data,
   });
 
-  if (isLoading) return <LoadingSpinner className="mt-16" />;
+  if (isLoading) return <LoadingSpinner size={48} />;
   if (!subject) return null;
 
+  const attendanceColor = subject.attendancePercent >= 75 ? '#16A34A' : '#DC2626';
+
   return (
-    <div className="max-w-3xl">
-      <button
+    <Stack spacing={3} sx={{ maxWidth: '900px' }}>
+      <Button
+        startIcon={<ArrowLeft size={16} />}
         onClick={() => navigate(-1)}
-        className="flex items-center gap-2 text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text)] mb-6"
+        variant="text"
+        sx={{ alignSelf: 'flex-start', color: 'text.secondary', fontWeight: 500 }}
       >
-        <ArrowLeft className="h-4 w-4" /> Back to Subjects
-      </button>
+        Back to Subjects
+      </Button>
 
       <PageHeader title={subject.name} subtitle={`${subject.code} • ${subject.teacherName}`}>
         <RiskBadge status={subject.status} />
       </PageHeader>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader><CardTitle>Performance</CardTitle></CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="text-center p-3 bg-[var(--color-surface-2)] rounded-[var(--radius-md)]">
-                  <p className="text-2xl font-bold text-[var(--color-text)]">{subject.lastScore ?? '—'}</p>
-                  <p className="text-xs text-[var(--color-text-muted)] mt-1">Last Score</p>
-                </div>
-                <div className="text-center p-3 bg-[var(--color-surface-2)] rounded-[var(--radius-md)]">
-                  <p className="text-2xl font-bold text-[var(--color-text)]">{subject.averageScore ?? '—'}</p>
-                  <p className="text-xs text-[var(--color-text-muted)] mt-1">Average</p>
-                </div>
-              </div>
-              <div>
-                <div className="flex justify-between text-xs mb-1">
-                  <span className="text-[var(--color-text-secondary)]">Syllabus Progress</span>
-                  <span className="font-medium">{subject.syllabusProgress}%</span>
-                </div>
-                <ProgressBar value={subject.syllabusProgress} height={8} showLabel />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+      <Grid container spacing={3}>
+        <Grid size={{ xs: 12, md: 6 }}>
+          <Card elevation={2} sx={{ borderRadius: '16px' }}>
+            <CardHeader title={<Typography variant="h6" sx={{ fontWeight: 700 }}>Performance</Typography>} />
+            <CardContent sx={{ pt: 0 }}>
+              <Grid container spacing={2} sx={{ mb: 3 }}>
+                <Grid size={{ xs: 6 }}>
+                  <Box
+                    sx={{
+                      textAlign: 'center',
+                      p: 2,
+                      borderRadius: '12px',
+                      bgcolor: 'grey.50',
+                    }}
+                  >
+                    <Typography variant="h4" sx={{ fontWeight: 700, color: 'text.primary' }}>
+                      {subject.lastScore ?? '—'}
+                    </Typography>
+                    <Typography variant="caption" sx={{ color: 'text.secondary' }}>Last Score</Typography>
+                  </Box>
+                </Grid>
+                <Grid size={{ xs: 6 }}>
+                  <Box
+                    sx={{
+                      textAlign: 'center',
+                      p: 2,
+                      borderRadius: '12px',
+                      bgcolor: 'grey.50',
+                    }}
+                  >
+                    <Typography variant="h4" sx={{ fontWeight: 700, color: 'text.primary' }}>
+                      {subject.averageScore ?? '—'}
+                    </Typography>
+                    <Typography variant="caption" sx={{ color: 'text.secondary' }}>Average</Typography>
+                  </Box>
+                </Grid>
+              </Grid>
+              <ProgressBar value={subject.syllabusProgress} height={8} showLabel label="Syllabus Progress" />
+            </CardContent>
+          </Card>
+        </Grid>
 
-        <Card>
-          <CardHeader><CardTitle>Attendance</CardTitle></CardHeader>
-          <CardContent>
-            <div className="text-center py-4">
-              <p className="text-4xl font-bold" style={{ color: subject.attendancePercent >= 75 ? 'var(--color-success)' : 'var(--color-danger)' }}>
-                {subject.attendancePercent}%
-              </p>
-              <p className="text-sm text-[var(--color-text-muted)] mt-2">Subject Attendance</p>
-              {subject.attendancePercent < 75 && (
-                <div className="mt-3 p-2 bg-[var(--color-danger-light)] rounded-[var(--radius-md)]">
-                  <p className="text-xs text-[var(--color-danger)]">⚠️ Below minimum 75% requirement</p>
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="md:col-span-2">
-          <CardHeader><CardTitle>Teacher Contact</CardTitle></CardHeader>
-          <CardContent>
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-[var(--color-primary-light)] flex items-center justify-center">
-                <span className="text-[var(--color-primary)] font-bold">{subject.teacherName[0]}</span>
-              </div>
-              <div>
-                <p className="font-medium text-[var(--color-text)]">{subject.teacherName}</p>
-                {subject.teacherEmail && (
-                  <a href={`mailto:${subject.teacherEmail}`} className="text-xs text-[var(--color-primary)] flex items-center gap-1 hover:underline">
-                    <Mail className="h-3 w-3" /> {subject.teacherEmail}
-                  </a>
+        <Grid size={{ xs: 12, md: 6 }}>
+          <Card elevation={2} sx={{ borderRadius: '16px' }}>
+            <CardHeader title={<Typography variant="h6" sx={{ fontWeight: 700 }}>Attendance</Typography>} />
+            <CardContent sx={{ pt: 0 }}>
+              <Box sx={{ textAlign: 'center', py: 2 }}>
+                <Typography variant="h2" sx={{ fontWeight: 800, color: attendanceColor }}>
+                  {subject.attendancePercent}%
+                </Typography>
+                <Typography variant="body2" sx={{ color: 'text.secondary', mt: 1 }}>
+                  Subject Attendance
+                </Typography>
+                {subject.attendancePercent < 75 && (
+                  <Box
+                    sx={{
+                      mt: 2,
+                      p: 1.5,
+                      bgcolor: '#FEF2F2',
+                      borderRadius: '12px',
+                    }}
+                  >
+                    <Typography variant="caption" sx={{ color: '#DC2626' }}>
+                      ⚠️ Below minimum 75% requirement
+                    </Typography>
+                  </Box>
                 )}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
+              </Box>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        <Grid size={{ xs: 12 }}>
+          <Card elevation={2} sx={{ borderRadius: '16px' }}>
+            <CardHeader title={<Typography variant="h6" sx={{ fontWeight: 700 }}>Teacher Contact</Typography>} />
+            <CardContent sx={{ pt: 0 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                <Box
+                  sx={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: '50%',
+                    bgcolor: 'primary.light',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: 'primary.main',
+                    fontWeight: 700,
+                    flexShrink: 0,
+                  }}
+                >
+                  {subject.teacherName[0]}
+                </Box>
+                <Box>
+                  <Typography sx={{ fontWeight: 600, color: 'text.primary' }}>{subject.teacherName}</Typography>
+                  {subject.teacherEmail && (
+                    <Box
+                      component="a"
+                      href={`mailto:${subject.teacherEmail}`}
+                      sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 0.5,
+                        color: 'primary.main',
+                        fontSize: '0.75rem',
+                        textDecoration: 'none',
+                        '&:hover': { textDecoration: 'underline' },
+                      }}
+                    >
+                      <Mail size={12} />
+                      {subject.teacherEmail}
+                    </Box>
+                  )}
+                </Box>
+              </Box>
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid>
+    </Stack>
   );
 }

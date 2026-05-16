@@ -1,32 +1,29 @@
 import React from 'react';
-import { cn } from '@/lib/utils';
-import { cva, type VariantProps } from 'class-variance-authority';
+import Chip, { ChipProps } from '@mui/material/Chip';
 
-const badgeVariants = cva(
-  'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium',
-  {
-    variants: {
-      variant: {
-        default: 'bg-[var(--color-surface-2)] text-[var(--color-text-secondary)]',
-        primary: 'bg-[var(--color-primary-light)] text-[var(--color-primary)]',
-        success: 'bg-[var(--color-success-light)] text-[var(--color-success)]',
-        warning: 'bg-[var(--color-warning-light)] text-[var(--color-warning)]',
-        danger: 'bg-[var(--color-danger-light)] text-[var(--color-danger)]',
-        info: 'bg-[var(--color-info-light)] text-[var(--color-info)]',
-      },
-    },
-    defaultVariants: {
-      variant: 'default',
-    },
-  }
-);
+interface BadgeProps {
+  variant?: 'default' | 'primary' | 'success' | 'warning' | 'danger' | 'info';
+  children?: React.ReactNode;
+  className?: string;
+}
 
-interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement>, VariantProps<typeof badgeVariants> {}
+const colorMap: Record<string, ChipProps['color']> = {
+  default: 'default',
+  primary: 'primary',
+  success: 'success',
+  warning: 'warning',
+  danger: 'error',
+  info: 'info',
+};
 
-export function Badge({ className, variant, children, ...props }: BadgeProps) {
+export function Badge({ variant = 'default', children, className }: BadgeProps) {
   return (
-    <span className={cn(badgeVariants({ variant }), className)} {...props}>
-      {children}
-    </span>
+    <Chip
+      label={children}
+      color={colorMap[variant] || 'default'}
+      size="small"
+      className={className}
+      sx={{ height: 20, fontSize: '0.7rem', fontWeight: 600 }}
+    />
   );
 }
