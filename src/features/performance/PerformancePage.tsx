@@ -1,13 +1,33 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { motion } from 'framer-motion';
 import {
-  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
-  Cell, CartesianGrid, Legend, AreaChart, Area,
-  LineChart, Line
+  Box,
+  Card,
+  CardContent,
+  Chip,
+  Grid,
+  Typography,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+} from '@mui/material';
+import LightbulbIcon from '@mui/icons-material/Lightbulb';
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip as ChartTooltip,
+  ResponsiveContainer,
+  Cell,
+  CartesianGrid,
+  Legend,
 } from 'recharts';
 import { PageHeader } from '@/components/shared/PageHeader';
-import { TrendingUp, Lightbulb, Medal } from 'lucide-react';
+import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
 import { formatPercent } from '@/lib/formatters';
 import { getGradeColor } from '@/lib/utils';
 import api from '@/lib/api';
@@ -20,7 +40,7 @@ const SUBJECT_COLORS: Record<string, string> = {
   English: '#8B5CF6',
   Hindi: '#F59E0B',
   'Social Science': '#EF4444',
-  'Computer Science': '#6C63FF',
+  'Computer Science': '#6366F1',
   'Physical Education': '#F97316',
 };
 
@@ -28,26 +48,32 @@ function getSubjectColor(name: string) {
   for (const [k, v] of Object.entries(SUBJECT_COLORS)) {
     if (name.includes(k) || k.includes(name)) return v;
   }
-  return '#6C63FF';
+  return '#6366F1';
 }
 
-const stagger = { hidden: {}, show: { transition: { staggerChildren: 0.07 } } };
-const fadeUp = { hidden: { opacity: 0, y: 16 }, show: { opacity: 1, y: 0, transition: { duration: 0.35 } } };
-
-function GlassTooltip({ active, payload, label }: any) {
+function CustomTooltip({ active, payload, label }: any) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="rounded-[12px] px-4 py-3 shadow-[var(--shadow-lg)] border border-[var(--color-border)]"
-      style={{ background: 'var(--color-surface)', backdropFilter: 'blur(12px)' }}>
-      <p className="text-[12px] font-semibold text-[var(--color-text)] mb-2">{label}</p>
+    <Box
+      sx={{
+        bgcolor: 'background.paper',
+        border: '1px solid',
+        borderColor: 'divider',
+        borderRadius: '12px',
+        px: 2,
+        py: 1.5,
+        boxShadow: 3,
+      }}
+    >
+      <Typography sx={{ fontSize: 12, fontWeight: 700, mb: 1 }}>{label}</Typography>
       {payload.map((p: any, i: number) => (
-        <div key={i} className="flex items-center gap-2 text-[11px]">
-          <div className="w-2 h-2 rounded-full" style={{ background: p.color }} />
-          <span className="text-[var(--color-text-secondary)]">{p.name}:</span>
-          <span className="font-bold text-[var(--color-text)]">{p.value}%</span>
-        </div>
+        <Box key={i} sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+          <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: p.color }} />
+          <Typography sx={{ fontSize: 11, color: 'text.secondary' }}>{p.name}:</Typography>
+          <Typography sx={{ fontSize: 11, fontWeight: 700 }}>{p.value}%</Typography>
+        </Box>
       ))}
-    </div>
+    </Box>
   );
 }
 
@@ -61,21 +87,7 @@ export default function PerformancePage() {
     queryFn: async () => (await api.get('/student/exams/results')).data.data,
   });
 
-  if (isLoading) {
-    return (
-      <div className="max-w-6xl space-y-6">
-        <PageHeader title="Performance" subtitle="Your academic performance analysis" />
-        <div className="grid grid-cols-3 gap-4">
-          {[1, 2, 3].map(i => <div key={i} className="skeleton h-28 rounded-[16px]" />)}
-        </div>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="skeleton h-64 rounded-[20px]" />
-          <div className="skeleton h-64 rounded-[20px]" />
-        </div>
-        <div className="skeleton h-80 rounded-[20px]" />
-      </div>
-    );
-  }
+  if (isLoading) return <LoadingSpinner />;
 
   const examTypes: { key: FilterType; label: string }[] = [
     { key: 'all', label: 'All Exams' },
@@ -96,7 +108,6 @@ export default function PerformancePage() {
 
   const barData = Object.values(subjectMap).map(s => ({
     name: s.name.split(' ')[0],
-    fullName: s.name,
     avg: Math.round(s.scores.reduce((a, b) => a + b, 0) / s.scores.length),
     classAvg: 70,
     color: s.color,
@@ -106,238 +117,273 @@ export default function PerformancePage() {
     ? Math.round(filtered.reduce((sum, r) => sum + r.percentage, 0) / filtered.length)
     : 0;
 
-  const bestResult = filtered.reduce<ExamResult | null>((best, r) => (!best || r.percentage > best.percentage) ? r : best, null);
+  const bestResult = filtered.reduce<ExamResult | null>(
+    (best, r) => (!best || r.percentage > best.percentage) ? r : best,
+    null
+  );
   const bestSubject = bestResult?.subjectName || '—';
 
-  // Trend data for area chart (grouped by subject with time)
-  const trendBySubject: Record<string, { name: string; color: string; dataPoints: { exam: string; score: number }[] }> = {};
-  filtered.forEach(r => {
-    if (!trendBySubject[r.subjectId]) {
-      trendBySubject[r.subjectId] = { name: r.subjectName, color: getSubjectColor(r.subjectName), dataPoints: [] };
-    }
-    trendBySubject[r.subjectId].dataPoints.push({ exam: r.examName.slice(0, 8), score: r.percentage });
-  });
-
-  // AI insights
   const lowSubjects = Object.values(subjectMap).filter(s => {
     const avg = s.scores.reduce((a, b) => a + b, 0) / s.scores.length;
     return avg < 60;
   });
 
+  const summaryStats = [
+    { label: 'Overall Average', value: `${overallAvg}%`, icon: '📊', color: '#6366F1' },
+    { label: 'Exams Taken', value: `${filtered.length}`, icon: '📝', color: '#10B981' },
+    { label: 'Best Subject', value: bestSubject.split(' ')[0], icon: '⭐', color: '#F59E0B' },
+  ];
+
   return (
-    <div className="max-w-6xl space-y-6">
+    <Box>
       <PageHeader title="Academic Performance" subtitle="Marks, grades, and class rankings across all exams" />
 
       {/* Filter chips */}
-      <div className="flex gap-2 flex-wrap">
+      <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 3 }}>
         {examTypes.map(t => (
-          <button
+          <Chip
             key={t.key}
+            label={t.label}
             onClick={() => setFilter(t.key)}
-            className="px-4 py-2 rounded-[10px] text-[12px] font-semibold transition-all"
-            style={filter === t.key ? {
-              background: 'var(--gradient-primary)',
-              color: 'white',
-              boxShadow: 'var(--shadow-glow)',
-            } : {
-              background: 'var(--color-surface-2)',
-              color: 'var(--color-text-secondary)',
-              border: '1px solid var(--color-border)',
-            }}
-          >
-            {t.label}
-          </button>
+            color={filter === t.key ? 'primary' : 'default'}
+            variant={filter === t.key ? 'filled' : 'outlined'}
+            sx={{ fontWeight: 600, fontSize: 12 }}
+          />
         ))}
-      </div>
+      </Box>
 
       {/* Summary stats */}
-      <motion.div variants={stagger} initial="hidden" animate="show" className="grid grid-cols-3 gap-4">
-        {[
-          { label: 'Overall Average', value: `${overallAvg}%`, gradient: 'var(--gradient-primary)', icon: '📊' },
-          { label: 'Exams Taken', value: filtered.length, gradient: 'linear-gradient(135deg, #10B981, #34D399)', icon: '📝' },
-          { label: 'Best Subject', value: bestSubject.split(' ')[0], gradient: 'linear-gradient(135deg, #F59E0B, #FCD34D)', icon: '⭐' },
-        ].map((s, i) => (
-          <motion.div
-            key={s.label}
-            variants={fadeUp}
-            className="rounded-[18px] p-5 flex items-center gap-4"
-            style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', boxShadow: 'var(--shadow-sm)' }}
-          >
-            <div className="w-12 h-12 rounded-[14px] flex items-center justify-center text-[22px] flex-shrink-0"
-              style={{ background: s.gradient }}>
-              {s.icon}
-            </div>
-            <div>
-              <p className="text-[11px] text-[var(--color-text-muted)]">{s.label}</p>
-              <p className="text-[24px] font-bold text-[var(--color-text)] leading-tight">{s.value}</p>
-            </div>
-          </motion.div>
+      <Grid container spacing={2} sx={{ mb: 3 }}>
+        {summaryStats.map(s => (
+          <Grid size={{ xs: 12, sm: 4 }} key={s.label}>
+            <Card elevation={2} sx={{ borderRadius: '16px' }}>
+              <CardContent sx={{ p: 2.5, display: 'flex', alignItems: 'center', gap: 2 }}>
+                <Box
+                  sx={{
+                    width: 48,
+                    height: 48,
+                    borderRadius: '14px',
+                    bgcolor: `${s.color}18`,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: 22,
+                    flexShrink: 0,
+                  }}
+                >
+                  {s.icon}
+                </Box>
+                <Box>
+                  <Typography sx={{ fontSize: 12, color: 'text.disabled', mb: 0.25 }}>{s.label}</Typography>
+                  <Typography variant="h5" sx={{ fontWeight: 800, lineHeight: 1 }}>{s.value}</Typography>
+                </Box>
+              </CardContent>
+            </Card>
+          </Grid>
         ))}
-      </motion.div>
+      </Grid>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Bar chart - subject comparison */}
-        <div className="rounded-[20px] p-6 bg-[var(--color-surface)] border border-[var(--color-border)] shadow-[var(--shadow-sm)]">
-          <h3 className="text-[15px] font-bold text-[var(--color-text)] mb-5">Subject Performance</h3>
-          <ResponsiveContainer width="100%" height={220}>
-            <BarChart data={barData} barGap={4} barCategoryGap={12}>
-              <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" vertical={false} />
-              <XAxis
-                dataKey="name"
-                tick={{ fontSize: 11, fill: 'var(--color-text-secondary)' }}
-                axisLine={false}
-                tickLine={false}
-              />
-              <YAxis
-                domain={[0, 100]}
-                tick={{ fontSize: 11, fill: 'var(--color-text-secondary)' }}
-                axisLine={false}
-                tickLine={false}
-                tickFormatter={v => `${v}%`}
-              />
-              <Tooltip content={<GlassTooltip />} cursor={{ fill: 'rgba(0,0,0,0.04)' }} />
-              <Legend
-                iconType="circle"
-                iconSize={8}
-                formatter={(v) => <span style={{ fontSize: 11, color: 'var(--color-text-secondary)' }}>{v}</span>}
-              />
-              <Bar dataKey="avg" name="Your Score" radius={[6, 6, 0, 0]}>
-                {barData.map((entry, i) => (
-                  <Cell key={i} fill={entry.color} />
-                ))}
-              </Bar>
-              <Bar dataKey="classAvg" name="Class Avg" fill="var(--color-border)" radius={[6, 6, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
+      <Grid container spacing={3} sx={{ mb: 3 }}>
+        {/* Bar chart */}
+        <Grid size={{ xs: 12, lg: 6 }}>
+          <Card elevation={2} sx={{ borderRadius: '16px' }}>
+            <CardContent sx={{ p: 2.5 }}>
+              <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 2 }}>Subject Performance</Typography>
+              <ResponsiveContainer width="100%" height={220}>
+                <BarChart data={barData} barGap={4} barCategoryGap={12}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
+                  <XAxis dataKey="name" tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
+                  <YAxis
+                    domain={[0, 100]}
+                    tick={{ fontSize: 11 }}
+                    axisLine={false}
+                    tickLine={false}
+                    tickFormatter={v => `${v}%`}
+                  />
+                  <ChartTooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(0,0,0,0.04)' }} />
+                  <Legend iconType="circle" iconSize={8} formatter={(v) => <span style={{ fontSize: 11 }}>{v}</span>} />
+                  <Bar dataKey="avg" name="Your Score" radius={[6, 6, 0, 0]}>
+                    {barData.map((entry, i) => (
+                      <Cell key={i} fill={entry.color} />
+                    ))}
+                  </Bar>
+                  <Bar dataKey="classAvg" name="Class Avg" fill="#E5E7EB" radius={[6, 6, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+        </Grid>
 
-        {/* Rankings */}
-        <div className="rounded-[20px] p-6 bg-[var(--color-surface)] border border-[var(--color-border)] shadow-[var(--shadow-sm)]">
-          <h3 className="text-[15px] font-bold text-[var(--color-text)] mb-5">Class Rankings</h3>
-          <div className="space-y-3">
-            {filtered.slice(0, 5).map(r => {
-              const gradeColor = getGradeColor(r.grade);
-              const subColor = getSubjectColor(r.subjectName);
-              return (
-                <div key={r.id} className="flex items-center gap-3">
-                  <div
-                    className="w-9 h-9 rounded-full flex items-center justify-center text-[11px] font-bold text-white flex-shrink-0"
-                    style={{ background: r.classRank <= 3 ? '#F59E0B' : r.classRank <= 10 ? '#6C63FF' : '#9CA3AF' }}
-                  >
-                    #{r.classRank}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[13px] font-semibold text-[var(--color-text)] truncate">{r.subjectName}</p>
-                    <p className="text-[11px] text-[var(--color-text-muted)]">{r.examName} · Class avg: {r.classAverage}%</p>
-                  </div>
-                  <div className="text-right flex-shrink-0">
-                    <span className="text-[13px] font-bold px-2.5 py-0.5 rounded-[8px]"
-                      style={{ color: gradeColor, background: `${gradeColor}18` }}>
-                      {r.grade}
-                    </span>
-                    <p className="text-[11px] text-[var(--color-text-muted)] mt-0.5">{formatPercent(r.percentage)}</p>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </div>
+        {/* Class Rankings */}
+        <Grid size={{ xs: 12, lg: 6 }}>
+          <Card elevation={2} sx={{ borderRadius: '16px', height: '100%' }}>
+            <CardContent sx={{ p: 2.5 }}>
+              <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 2 }}>Class Rankings</Typography>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                {filtered.slice(0, 5).map(r => {
+                  const gradeColor = getGradeColor(r.grade);
+                  return (
+                    <Box key={r.id} sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                      <Box
+                        sx={{
+                          width: 36,
+                          height: 36,
+                          borderRadius: '50%',
+                          bgcolor: r.classRank <= 3 ? '#F59E0B' : r.classRank <= 10 ? '#6366F1' : 'action.hover',
+                          color: r.classRank <= 10 ? '#fff' : 'text.secondary',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: 11,
+                          fontWeight: 800,
+                          flexShrink: 0,
+                        }}
+                      >
+                        #{r.classRank}
+                      </Box>
+                      <Box sx={{ flex: 1, minWidth: 0 }}>
+                        <Typography sx={{ fontSize: 13, fontWeight: 600 }} noWrap>{r.subjectName}</Typography>
+                        <Typography sx={{ fontSize: 11, color: 'text.disabled' }}>
+                          {r.examName} · Class avg: {r.classAverage}%
+                        </Typography>
+                      </Box>
+                      <Box sx={{ textAlign: 'right', flexShrink: 0 }}>
+                        <Box
+                          sx={{
+                            display: 'inline-block',
+                            px: 1,
+                            py: 0.25,
+                            borderRadius: '8px',
+                            fontSize: 12,
+                            fontWeight: 700,
+                            color: gradeColor,
+                            bgcolor: `${gradeColor}18`,
+                          }}
+                        >
+                          {r.grade}
+                        </Box>
+                        <Typography sx={{ fontSize: 11, color: 'text.disabled', mt: 0.25 }}>
+                          {formatPercent(r.percentage)}
+                        </Typography>
+                      </Box>
+                    </Box>
+                  );
+                })}
+              </Box>
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid>
 
-      {/* AI Insights panel */}
+      {/* AI Insights */}
       {lowSubjects.length > 0 && (
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="rounded-[20px] p-6"
-          style={{
-            background: 'var(--color-surface)',
-            border: '1px solid var(--color-border)',
-            boxShadow: 'var(--shadow-sm)',
-            borderLeft: '4px solid var(--color-primary)',
-          }}
-        >
-          <div className="flex items-start gap-4">
-            <div className="w-10 h-10 rounded-[12px] flex items-center justify-center flex-shrink-0"
-              style={{ background: 'var(--gradient-primary)' }}>
-              <Lightbulb className="h-5 w-5 text-white" />
-            </div>
-            <div>
-              <p className="text-[15px] font-bold text-[var(--color-text)] mb-2">AI-Powered Insights 🤖</p>
-              <p className="text-[13px] text-[var(--color-text-secondary)] mb-3">
+        <Card elevation={2} sx={{ borderRadius: '16px', mb: 3, borderLeft: '4px solid #6366F1' }}>
+          <CardContent sx={{ p: 2.5, display: 'flex', gap: 2 }}>
+            <Box
+              sx={{
+                width: 40,
+                height: 40,
+                borderRadius: '12px',
+                bgcolor: '#6366F118',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+              }}
+            >
+              <LightbulbIcon sx={{ fontSize: 20, color: '#6366F1' }} />
+            </Box>
+            <Box>
+              <Typography variant="body2" sx={{ fontWeight: 700, mb: 1 }}>AI-Powered Insights 🤖</Typography>
+              <Typography sx={{ fontSize: 12, color: 'text.secondary', mb: 1.5 }}>
                 Based on your performance analysis, here are personalized recommendations:
-              </p>
-              <ul className="space-y-1.5">
+              </Typography>
+              <Box component="ul" sx={{ m: 0, pl: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 0.75 }}>
                 {lowSubjects.map(s => (
-                  <li key={s.name} className="flex items-start gap-2 text-[13px] text-[var(--color-text-secondary)]">
-                    <span className="text-[var(--color-warning)] mt-0.5">⚡</span>
-                    <span>Your average in <strong style={{ color: getSubjectColor(s.name) }}>{s.name}</strong> is below 60%. Focus more study time on this subject.</span>
-                  </li>
+                  <Box component="li" key={s.name} sx={{ display: 'flex', gap: 1, fontSize: 12, color: 'text.secondary' }}>
+                    <span>⚡</span>
+                    <span>
+                      Your average in{' '}
+                      <strong style={{ color: getSubjectColor(s.name) }}>{s.name}</strong>{' '}
+                      is below 60%. Focus more study time on this subject.
+                    </span>
+                  </Box>
                 ))}
-                <li className="flex items-start gap-2 text-[13px] text-[var(--color-text-secondary)]">
-                  <span className="text-[var(--color-success)] mt-0.5">✅</span>
-                  <span>Overall average of {overallAvg}% is {overallAvg >= 70 ? 'good' : 'needs improvement'}. Keep consistent with your study schedule.</span>
-                </li>
-              </ul>
-            </div>
-          </div>
-        </motion.div>
+                <Box component="li" sx={{ display: 'flex', gap: 1, fontSize: 12, color: 'text.secondary' }}>
+                  <span>✅</span>
+                  <span>
+                    Overall average of {overallAvg}% is{' '}
+                    {overallAvg >= 70 ? 'good' : 'needs improvement'}. Keep consistent with your study schedule.
+                  </span>
+                </Box>
+              </Box>
+            </Box>
+          </CardContent>
+        </Card>
       )}
 
       {/* Results table */}
-      <div className="rounded-[20px] overflow-hidden bg-[var(--color-surface)] border border-[var(--color-border)] shadow-[var(--shadow-sm)]">
-        <div className="px-6 py-4 border-b border-[var(--color-border)]">
-          <h3 className="text-[15px] font-bold text-[var(--color-text)]">All Results ({filtered.length})</h3>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr style={{ background: 'var(--color-surface-2)' }}>
+      <Card elevation={2} sx={{ borderRadius: '16px', overflow: 'hidden' }}>
+        <Box sx={{ px: 2.5, py: 2, borderBottom: '1px solid', borderColor: 'divider' }}>
+          <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>All Results ({filtered.length})</Typography>
+        </Box>
+        <TableContainer>
+          <Table size="small">
+            <TableHead>
+              <TableRow sx={{ bgcolor: 'action.hover' }}>
                 {['Subject', 'Exam', 'Marks', 'Percentage', 'Grade', 'Rank', 'Class Avg'].map(h => (
-                  <th key={h} className="text-left py-3 px-4 text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider">
+                  <TableCell
+                    key={h}
+                    sx={{ fontSize: 11, fontWeight: 700, color: 'text.disabled', textTransform: 'uppercase', letterSpacing: 0.5 }}
+                  >
                     {h}
-                  </th>
+                  </TableCell>
                 ))}
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((r, i) => {
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {filtered.map(r => {
                 const gradeColor = getGradeColor(r.grade);
                 const subColor = getSubjectColor(r.subjectName);
                 return (
-                  <motion.tr
-                    key={r.id}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: i * 0.03 }}
-                    className="border-b border-[var(--color-border)] hover:bg-[var(--color-surface-2)] transition-colors"
-                  >
-                    <td className="py-3 px-4">
-                      <div className="flex items-center gap-2">
-                        <div className="w-2 h-7 rounded-full flex-shrink-0" style={{ background: subColor }} />
-                        <span className="text-[13px] font-semibold text-[var(--color-text)]">{r.subjectName}</span>
-                      </div>
-                    </td>
-                    <td className="py-3 px-4 text-[12px] text-[var(--color-text-secondary)]">{r.examName}</td>
-                    <td className="py-3 px-4 text-[13px] font-medium text-[var(--color-text)]">
-                      {r.marksObtained}<span className="text-[var(--color-text-muted)]">/{r.maxMarks}</span>
-                    </td>
-                    <td className="py-3 px-4 text-[13px] font-semibold text-[var(--color-text)]">{formatPercent(r.percentage)}</td>
-                    <td className="py-3 px-4">
-                      <span className="text-[12px] font-bold px-2 py-0.5 rounded-[6px]"
-                        style={{ color: gradeColor, background: `${gradeColor}18` }}>
+                  <TableRow key={r.id} sx={{ '&:hover': { bgcolor: 'action.hover' }, transition: 'background 0.15s' }}>
+                    <TableCell sx={{ py: 1.5 }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Box sx={{ width: 3, height: 28, borderRadius: 1, bgcolor: subColor, flexShrink: 0 }} />
+                        <Typography sx={{ fontSize: 13, fontWeight: 600 }}>{r.subjectName}</Typography>
+                      </Box>
+                    </TableCell>
+                    <TableCell sx={{ fontSize: 12, color: 'text.secondary' }}>{r.examName}</TableCell>
+                    <TableCell sx={{ fontSize: 13, fontWeight: 500 }}>
+                      {r.marksObtained}
+                      <Typography component="span" sx={{ color: 'text.disabled', fontSize: 11 }}>/{r.maxMarks}</Typography>
+                    </TableCell>
+                    <TableCell sx={{ fontSize: 13, fontWeight: 600 }}>{formatPercent(r.percentage)}</TableCell>
+                    <TableCell>
+                      <Box
+                        sx={{
+                          display: 'inline-block',
+                          px: 1,
+                          py: 0.25,
+                          borderRadius: '6px',
+                          fontSize: 12,
+                          fontWeight: 700,
+                          color: gradeColor,
+                          bgcolor: `${gradeColor}18`,
+                        }}
+                      >
                         {r.grade}
-                      </span>
-                    </td>
-                    <td className="py-3 px-4 text-[13px] text-[var(--color-text-secondary)]">#{r.classRank}</td>
-                    <td className="py-3 px-4 text-[12px] text-[var(--color-text-muted)]">{r.classAverage}%</td>
-                  </motion.tr>
+                      </Box>
+                    </TableCell>
+                    <TableCell sx={{ fontSize: 13, color: 'text.secondary' }}>#{r.classRank}</TableCell>
+                    <TableCell sx={{ fontSize: 12, color: 'text.disabled' }}>{r.classAverage}%</TableCell>
+                  </TableRow>
                 );
               })}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
+            </TableBody>
+          </Table>
+        </TableContainer>
+      </Card>
+    </Box>
   );
 }
