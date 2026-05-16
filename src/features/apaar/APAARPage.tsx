@@ -1,16 +1,44 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Shield, CheckCircle, Copy, ExternalLink, Eye, EyeOff } from 'lucide-react';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
-import { Badge } from '@/components/ui/Badge';
-import { Button } from '@/components/ui/Button';
+import {
+  Box,
+  Button,
+  Card,
+  CardContent,
+  Chip,
+  CircularProgress,
+  Grid,
+  IconButton,
+  InputAdornment,
+  List,
+  ListItem,
+  ListItemIcon,
+  ListItemText,
+  TextField,
+  Typography,
+} from '@mui/material';
+import ShieldIcon from '@mui/icons-material/Shield';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
+import VisibilityIcon from '@mui/icons-material/Visibility';
+import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
+import ShareIcon from '@mui/icons-material/Share';
+import DownloadIcon from '@mui/icons-material/Download';
+import QrCode2Icon from '@mui/icons-material/QrCode2';
+import ArticleIcon from '@mui/icons-material/Article';
 import { PageHeader } from '@/components/shared/PageHeader';
-import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
 import { useAuthStore } from '@/store/authStore';
 import { useUIStore } from '@/store/uiStore';
 import { APAARStatus } from '@/types/enums';
 import api from '@/lib/api';
 import { formatDate } from '@/lib/formatters';
+
+const INFO_ITEMS = [
+  { icon: '🎓', title: 'Lifelong ID', desc: 'Follows you throughout your education journey' },
+  { icon: '🔒', title: 'Secure', desc: 'Linked to Aadhaar with consent-based access' },
+  { icon: '📜', title: 'Digital Records', desc: 'All academic achievements stored digitally' },
+  { icon: '🌐', title: 'Portable', desc: 'Recognized across all educational institutions' },
+];
 
 export default function APAARPage() {
   const { student } = useAuthStore();
@@ -22,7 +50,7 @@ export default function APAARPage() {
     queryFn: async () => (await api.get('/student/apaar')).data.data,
   });
 
-  if (isLoading) return <LoadingSpinner className="mt-16" />;
+  const isVerified = student?.apaarStatus === APAARStatus.VERIFIED;
 
   const handleCopy = () => {
     if (student?.apaarId) {
@@ -31,97 +59,190 @@ export default function APAARPage() {
     }
   };
 
+  if (isLoading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', mt: 8 }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
+
   return (
-    <div className="max-w-3xl">
+    <Box sx={{ maxWidth: 768 }}>
       <PageHeader
         title="APAAR Record"
         subtitle="Academic Bank of Credits - Your Digital Academic Passport"
       />
 
-      {/* Status Card */}
-      <Card className="mb-6">
-        <div className="flex items-center gap-4">
-          <div className={`w-16 h-16 rounded-full flex items-center justify-center ${student?.apaarStatus === APAARStatus.VERIFIED ? 'bg-[var(--color-success-light)]' : 'bg-[var(--color-warning-light)]'}`}>
-            <Shield className={`h-8 w-8 ${student?.apaarStatus === APAARStatus.VERIFIED ? 'text-[var(--color-success)]' : 'text-[var(--color-warning)]'}`} />
-          </div>
-          <div className="flex-1">
-            <div className="flex items-center gap-2 mb-1">
-              <h2 className="text-lg font-bold text-[var(--color-text)]">APAAR Account</h2>
-              <Badge variant={student?.apaarStatus === APAARStatus.VERIFIED ? 'success' : 'warning'}>
-                {student?.apaarStatus === APAARStatus.VERIFIED ? '✓ Verified' : 'Pending'}
-              </Badge>
-            </div>
-            <p className="text-sm text-[var(--color-text-secondary)]">
-              {student?.apaarStatus === APAARStatus.VERIFIED
-                ? 'Your APAAR account is verified and linked to your academic records.'
-                : 'Your APAAR verification is in progress.'}
-            </p>
-          </div>
-        </div>
+      {/* Status + ID Card */}
+      <Card elevation={2} sx={{ borderRadius: '16px', mb: 3 }}>
+        <CardContent sx={{ p: 3 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
+            <Box
+              sx={{
+                width: 64,
+                height: 64,
+                borderRadius: '50%',
+                bgcolor: isVerified ? 'success.light' : 'warning.light',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+              }}
+            >
+              <ShieldIcon sx={{ fontSize: 32, color: isVerified ? 'success.main' : 'warning.main' }} />
+            </Box>
+            <Box sx={{ flex: 1 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                <Typography variant="h6" sx={{ fontWeight: 700 }}>APAAR Account</Typography>
+                <Chip
+                  label={isVerified ? '✓ Verified' : 'Pending'}
+                  size="small"
+                  color={isVerified ? 'success' : 'warning'}
+                  sx={{ fontWeight: 600 }}
+                />
+              </Box>
+              <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                {isVerified
+                  ? 'Your APAAR account is verified and linked to your academic records.'
+                  : 'Your APAAR verification is in progress.'}
+              </Typography>
+            </Box>
+          </Box>
 
-        <div className="mt-4 pt-4 border-t border-[var(--color-border)]">
-          <p className="text-xs text-[var(--color-text-muted)] mb-2">APAAR ID</p>
-          <div className="flex items-center gap-2">
-            <code className="flex-1 font-mono text-sm bg-[var(--color-surface-2)] px-3 py-2 rounded-[var(--radius-md)] text-[var(--color-text)]">
-              {showAPAAR ? student?.apaarId : 'APAAR-DL-2025-XXXXXX'}
-            </code>
-            <Button variant="ghost" size="icon-sm" onClick={() => setShowAPAAR(s => !s)} aria-label="Toggle APAAR visibility">
-              {showAPAAR ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-            </Button>
-            <Button variant="ghost" size="icon-sm" onClick={handleCopy} aria-label="Copy APAAR ID">
-              <Copy className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-      </Card>
+          {/* APAAR ID display */}
+          <Typography variant="caption" sx={{ color: 'text.disabled', display: 'block', mb: 1 }}>
+            APAAR ID
+          </Typography>
+          <TextField
+            fullWidth
+            value={showAPAAR ? (student?.apaarId || '') : 'APAAR-DL-2025-XXXXXX'}
+            slotProps={{
+              input: {
+                readOnly: true,
+                sx: { fontFamily: 'monospace', fontSize: 14 },
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton size="small" onClick={() => setShowAPAAR(s => !s)} aria-label="Toggle visibility">
+                      {showAPAAR ? <VisibilityOffIcon fontSize="small" /> : <VisibilityIcon fontSize="small" />}
+                    </IconButton>
+                    <IconButton size="small" onClick={handleCopy} aria-label="Copy APAAR ID">
+                      <ContentCopyIcon fontSize="small" />
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }
+            }}
+            size="small"
+          />
 
-      {/* What is APAAR */}
-      <Card className="mb-6">
-        <CardHeader><CardTitle>What is APAAR?</CardTitle></CardHeader>
-        <CardContent>
-          <p className="text-sm text-[var(--color-text-secondary)] leading-relaxed">
-            APAAR (Automated Permanent Academic Account Registry) is a unique ID issued by the Government of India under the National Education Policy 2020.
-            It stores your complete academic journey digitally — from school to higher education — and is linked to your Aadhaar for verification.
-          </p>
-          <div className="grid grid-cols-2 gap-3 mt-4">
-            {[
-              { icon: '🎓', title: 'Lifelong ID', desc: 'Follows you throughout your education journey' },
-              { icon: '🔒', title: 'Secure', desc: 'Linked to Aadhaar with consent-based access' },
-              { icon: '📜', title: 'Digital Records', desc: 'All academic achievements stored digitally' },
-              { icon: '🌐', title: 'Portable', desc: 'Recognized across all educational institutions' },
-            ].map(item => (
-              <div key={item.title} className="p-3 bg-[var(--color-surface-2)] rounded-[var(--radius-md)]">
-                <p className="text-lg mb-1">{item.icon}</p>
-                <p className="text-xs font-semibold text-[var(--color-text)]">{item.title}</p>
-                <p className="text-xs text-[var(--color-text-muted)]">{item.desc}</p>
-              </div>
-            ))}
-          </div>
+          {/* Action buttons */}
+          <Box sx={{ display: 'flex', gap: 1.5, mt: 2.5 }}>
+            <Button variant="contained" startIcon={<ShareIcon />} sx={{ borderRadius: 2 }}>
+              Share
+            </Button>
+            <Button variant="outlined" startIcon={<DownloadIcon />} sx={{ borderRadius: 2 }}>
+              Download
+            </Button>
+          </Box>
         </CardContent>
       </Card>
 
-      {/* Academic Records */}
+      {/* QR Code section */}
+      <Card elevation={2} sx={{ borderRadius: '16px', mb: 3 }}>
+        <CardContent sx={{ p: 3, textAlign: 'center' }}>
+          <Typography variant="h6" sx={{ fontWeight: 700, mb: 2 }}>QR Code</Typography>
+          <Box
+            sx={{
+              width: 160,
+              height: 160,
+              borderRadius: '12px',
+              bgcolor: 'action.hover',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              mx: 'auto',
+              mb: 2,
+              border: '1px solid',
+              borderColor: 'divider',
+            }}
+          >
+            <QrCode2Icon sx={{ fontSize: 80, color: 'text.disabled' }} />
+          </Box>
+          <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+            Scan to verify your APAAR identity
+          </Typography>
+        </CardContent>
+      </Card>
+
+      {/* What is APAAR */}
+      <Card elevation={2} sx={{ borderRadius: '16px', mb: 3 }}>
+        <CardContent sx={{ p: 3 }}>
+          <Typography variant="h6" sx={{ fontWeight: 700, mb: 1.5 }}>What is APAAR?</Typography>
+          <Typography variant="body2" sx={{ color: 'text.secondary', lineHeight: 1.7, mb: 2.5 }}>
+            APAAR (Automated Permanent Academic Account Registry) is a unique ID issued by the Government of India under
+            the National Education Policy 2020. It stores your complete academic journey digitally — from school to
+            higher education — and is linked to your Aadhaar for verification.
+          </Typography>
+          <Grid container spacing={1.5}>
+            {INFO_ITEMS.map(item => (
+              <Grid size={{ xs: 6 }} key={item.title}>
+                <Box sx={{ p: 2, bgcolor: 'action.hover', borderRadius: '12px' }}>
+                  <Typography sx={{ fontSize: 18, mb: 0.5 }}>{item.icon}</Typography>
+                  <Typography sx={{ fontSize: 13, fontWeight: 700, mb: 0.25 }}>{item.title}</Typography>
+                  <Typography sx={{ fontSize: 12, color: 'text.disabled' }}>{item.desc}</Typography>
+                </Box>
+              </Grid>
+            ))}
+          </Grid>
+        </CardContent>
+      </Card>
+
+      {/* Linked documents / Academic Records */}
       {apaarData?.records && (
-        <Card>
-          <CardHeader><CardTitle>Academic Records</CardTitle></CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {apaarData.records.map((record: any) => (
-                <div key={record.year} className="flex items-center gap-3 p-3 bg-[var(--color-surface-2)] rounded-[var(--radius-md)]">
-                  <CheckCircle className={`h-4 w-4 flex-shrink-0 ${record.verified ? 'text-[var(--color-success)]' : 'text-[var(--color-text-muted)]'}`} />
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-[var(--color-text)]">{record.school}</p>
-                    <p className="text-xs text-[var(--color-text-muted)]">Class {record.class} · {record.year}</p>
-                  </div>
-                  <Badge variant={record.verified ? 'success' : 'default'}>
-                    {record.verified ? 'Verified' : 'Pending'}
-                  </Badge>
-                </div>
+        <Card elevation={2} sx={{ borderRadius: '16px' }}>
+          <CardContent sx={{ p: 3 }}>
+            <Typography variant="h6" sx={{ fontWeight: 700, mb: 1.5 }}>Academic Records</Typography>
+            <List disablePadding>
+              {apaarData.records.map((record: any, index: number) => (
+                <ListItem
+                  key={record.year}
+                  sx={{
+                    px: 2,
+                    py: 1.5,
+                    bgcolor: 'action.hover',
+                    borderRadius: '12px',
+                    mb: index < apaarData.records.length - 1 ? 1 : 0,
+                    gap: 1,
+                  }}
+                >
+                  <ListItemIcon sx={{ minWidth: 36 }}>
+                    <CheckCircleIcon
+                      sx={{ fontSize: 18, color: record.verified ? 'success.main' : 'text.disabled' }}
+                    />
+                  </ListItemIcon>
+                  <ListItemText
+                    primary={
+                      <Typography variant="body2" sx={{ fontWeight: 600 }}>{record.school}</Typography>
+                    }
+                    secondary={
+                      <Typography sx={{ fontSize: 12, color: 'text.disabled' }}>
+                        Class {record.class} · {record.year}
+                      </Typography>
+                    }
+                  />
+                  <Chip
+                    label={record.verified ? 'Verified' : 'Pending'}
+                    size="small"
+                    color={record.verified ? 'success' : 'default'}
+                    sx={{ fontWeight: 600 }}
+                  />
+                </ListItem>
               ))}
-            </div>
+            </List>
           </CardContent>
         </Card>
       )}
-    </div>
+    </Box>
   );
 }

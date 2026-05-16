@@ -1,6 +1,5 @@
 import React from 'react';
-import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/Button';
+import { Box, Typography, Button } from '@mui/material';
 
 interface EmptyStateProps {
   icon?: React.ReactNode;
@@ -8,21 +7,16 @@ interface EmptyStateProps {
   title: string;
   description?: string;
   action?: { label: string; onClick: () => void };
-  className?: string;
 }
 
-export function EmptyState({ icon, emoji, title, description, action, className }: EmptyStateProps) {
+export function EmptyState({ emoji, icon, title, description, action }: EmptyStateProps) {
   return (
-    <div className={cn('flex flex-col items-center justify-center py-12 px-4 text-center', className)}>
-      {emoji && <div className="text-5xl mb-4">{emoji}</div>}
-      {icon && <div className="text-[var(--color-text-muted)] mb-4">{icon}</div>}
-      <h3 className="text-base font-semibold text-[var(--color-text)] mb-2">{title}</h3>
-      {description && <p className="text-sm text-[var(--color-text-secondary)] max-w-sm mb-4">{description}</p>}
-      {action && (
-        <Button onClick={action.onClick} variant="outline" size="sm">
-          {action.label}
-        </Button>
-      )}
-    </div>
+    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', py: 8, px: 3, textAlign: 'center' }}>
+      {emoji && <Typography sx={{ fontSize: 56, mb: 2, lineHeight: 1 }}>{emoji}</Typography>}
+      {icon && <Box sx={{ color: 'text.disabled', mb: 2, '& svg': { fontSize: 48 } }}>{icon}</Box>}
+      <Typography variant="h5" sx={{ fontWeight: 700, mb: 1 }}>{title}</Typography>
+      {description && <Typography variant="body2" sx={{ color: 'text.secondary', maxWidth: 360, mb: 3 }}>{description}</Typography>}
+      {action && <Button variant="outlined" onClick={action.onClick}>{action.label}</Button>}
+    </Box>
   );
 }

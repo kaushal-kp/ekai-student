@@ -1,9 +1,21 @@
 import React, { useEffect, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
-import { Target, Lightbulb, TrendingUp, BookOpen, CalendarCheck, Clock, FileText, BarChart2, Plus } from 'lucide-react';
-import { getReadinessColor } from '@/lib/utils';
+import {
+  AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
+} from 'recharts';
+import {
+  Box, Card, CardContent, Typography, Grid, LinearProgress, List, ListItem,
+  ListItemText, Chip, Paper, Skeleton,
+} from '@mui/material';
+import LightbulbIcon from '@mui/icons-material/Lightbulb';
+import TrendingUpIcon from '@mui/icons-material/TrendingUp';
+import TargetIcon from '@mui/icons-material/TrackChanges';
+import BarChartIcon from '@mui/icons-material/BarChart';
+import CalendarCheckIcon from '@mui/icons-material/CalendarMonth';
+import ClockIcon from '@mui/icons-material/Schedule';
+import BookOpenIcon from '@mui/icons-material/MenuBook';
+import FileTextIcon from '@mui/icons-material/Description';
 import api from '@/lib/api';
 import { ReadinessScore } from '@/types/models';
 import { ReadinessLevel } from '@/types/enums';
@@ -35,13 +47,20 @@ const READINESS_LEVEL_CONFIG: Record<ReadinessLevel, { label: string; color: str
   [ReadinessLevel.NOT_STARTED]: { label: 'Not Started', color: '#6B7280', bg: '#F3F4F6' },
 };
 
+function scoreColor(score: number) {
+  if (score >= 80) return '#10B981';
+  if (score >= 60) return '#F59E0B';
+  return '#EF4444';
+}
+
 function AnimatedDonut({ score, size = 180 }: { score: number; size?: number }) {
   const circleRef = useRef<SVGCircleElement>(null);
   const r = 70;
   const circumference = 2 * Math.PI * r;
   const offset = circumference * (1 - score / 100);
-  const color = score >= 80 ? '#10B981' : score >= 60 ? '#F59E0B' : '#EF4444';
+  const color = scoreColor(score);
   const gradeLabel = score >= 80 ? 'Exam Ready' : score >= 60 ? 'Moderate' : 'At Risk';
+  const bgColor = score >= 80 ? '#D1FAF0' : score >= 60 ? '#FEF3C7' : '#FEE2E2';
 
   useEffect(() => {
     if (circleRef.current) {
@@ -58,10 +77,10 @@ function AnimatedDonut({ score, size = 180 }: { score: number; size?: number }) 
   }, [score]);
 
   return (
-    <div className="flex flex-col items-center gap-3">
-      <div className="relative" style={{ width: size, height: size }}>
+    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1.5 }}>
+      <Box sx={{ position: 'relative', width: size, height: size }}>
         <svg width={size} height={size} viewBox="0 0 160 160" style={{ transform: 'rotate(-90deg)' }}>
-          <circle cx="80" cy="80" r={r} fill="none" stroke="var(--color-border)" strokeWidth="12" />
+          <circle cx="80" cy="80" r={r} fill="none" stroke="#E5E7EB" strokeWidth="12" />
           <circle
             ref={circleRef}
             cx="80" cy="80" r={r}
@@ -73,80 +92,92 @@ function AnimatedDonut({ score, size = 180 }: { score: number; size?: number }) 
             strokeDashoffset={circumference}
           />
         </svg>
-        <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className="text-[48px] font-bold leading-none" style={{ color }}>{score}</span>
-          <span className="text-[13px] text-[var(--color-text-muted)] font-medium mt-1">/ 100</span>
-        </div>
-      </div>
-      <div className="flex items-center gap-2">
-        <span
-          className="px-3 py-1 rounded-full text-[12px] font-bold"
-          style={{
-            color: color,
-            background: score >= 80 ? '#D1FAF0' : score >= 60 ? '#FEF3C7' : '#FEE2E2',
-          }}
-        >
-          {gradeLabel}
-        </span>
-      </div>
-    </div>
+        <Box sx={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+          <Typography sx={{ fontSize: 48, fontWeight: 700, lineHeight: 1, color }}>{score}</Typography>
+          <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 500 }}>/ 100</Typography>
+        </Box>
+      </Box>
+      <Chip
+        label={gradeLabel}
+        size="small"
+        sx={{ bgcolor: bgColor, color, fontWeight: 700, fontSize: 12 }}
+      />
+    </Box>
   );
 }
 
 function DimensionBar({ label, value, icon: Icon }: { label: string; value: number; icon: React.ComponentType<any> }) {
-  const color = value >= 80 ? '#10B981' : value >= 60 ? '#F59E0B' : '#EF4444';
+  const color = scoreColor(value);
   return (
-    <div className="flex items-center gap-4">
-      <div className="flex items-center gap-2.5 w-[180px] flex-shrink-0">
-        <div className="w-8 h-8 rounded-[8px] flex items-center justify-center flex-shrink-0"
-          style={{ background: `${color}18` }}>
-          <Icon className="h-4 w-4" style={{ color }} />
-        </div>
-        <span className="text-[13px] font-medium text-[var(--color-text-secondary)] truncate">{label}</span>
-      </div>
-      <div className="flex-1 relative">
-        <div className="h-2.5 rounded-full overflow-hidden" style={{ background: 'var(--color-surface-2)' }}>
-          <motion.div
-            initial={{ width: 0 }}
-            animate={{ width: `${value}%` }}
-            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1], delay: 0.2 }}
-            className="h-full rounded-full"
-            style={{ background: `linear-gradient(90deg, ${color}, ${color}cc)` }}
-          />
-        </div>
-      </div>
-      <span className="text-[13px] font-bold w-10 text-right flex-shrink-0" style={{ color }}>{value}%</span>
-    </div>
+    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: 200, flexShrink: 0 }}>
+        <Box
+          sx={{
+            width: 32, height: 32, borderRadius: '8px', display: 'flex',
+            alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+            bgcolor: `${color}18`,
+          }}
+        >
+          <Icon sx={{ fontSize: 16, color }} />
+        </Box>
+        <Typography variant="body2" sx={{ fontWeight: 500, fontSize: 13 }} color="text.secondary" noWrap>
+          {label}
+        </Typography>
+      </Box>
+      <Box sx={{ flex: 1 }}>
+        <LinearProgress
+          variant="determinate"
+          value={value}
+          sx={{
+            height: 10, borderRadius: 5,
+            bgcolor: 'action.hover',
+            '& .MuiLinearProgress-bar': { bgcolor: color, borderRadius: 5 },
+          }}
+        />
+      </Box>
+      <Typography variant="body2" sx={{ fontWeight: 700 ,  width: 40, textAlign: 'right', color, flexShrink: 0, fontSize: 13 }}>
+        {value}%
+      </Typography>
+    </Box>
   );
 }
 
 function GlassTooltip({ active, payload, label }: any) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="rounded-[12px] px-4 py-3 shadow-[var(--shadow-lg)] border border-[var(--color-border)]"
-      style={{ background: 'var(--color-surface)', backdropFilter: 'blur(12px)' }}>
-      <p className="text-[12px] font-semibold text-[var(--color-text)] mb-1">{label}</p>
-      <div className="flex items-center gap-2 text-[11px]">
-        <div className="w-2 h-2 rounded-full" style={{ background: 'var(--color-primary)' }} />
-        <span className="text-[var(--color-text-secondary)]">Score:</span>
-        <span className="font-bold text-[var(--color-text)]">{payload[0]?.value}</span>
-      </div>
-    </div>
+    <Paper elevation={4} sx={{ px: 2, py: 1.5, borderRadius: '12px' }}>
+      <Typography variant="caption" sx={{ fontWeight: 700, display: "block", mb: 0.5 }}>{label}</Typography>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+        <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: '#6366F1' }} />
+        <Typography variant="caption" color="text.secondary">Score:</Typography>
+        <Typography variant="caption" sx={{ fontWeight: 700 }}>{payload[0]?.value}</Typography>
+      </Box>
+    </Paper>
   );
 }
 
 function SkeletonReadiness() {
   return (
-    <div className="space-y-6 animate-pulse">
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="skeleton h-[320px] rounded-[20px]" />
-        <div className="lg:col-span-2 skeleton h-[320px] rounded-[20px]" />
-      </div>
-      <div className="skeleton h-[200px] rounded-[20px]" />
-      <div className="skeleton h-[280px] rounded-[20px]" />
-    </div>
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+      <Grid container spacing={3}>
+        <Grid size={{ xs: 12, lg: 4 }}>
+          <Skeleton variant="rectangular" height={320} sx={{ borderRadius: '20px' }} />
+        </Grid>
+        <Grid size={{ xs: 12, lg: 8 }}>
+          <Skeleton variant="rectangular" height={320} sx={{ borderRadius: '20px' }} />
+        </Grid>
+      </Grid>
+      <Skeleton variant="rectangular" height={200} sx={{ borderRadius: '20px' }} />
+      <Skeleton variant="rectangular" height={280} sx={{ borderRadius: '20px' }} />
+    </Box>
   );
 }
+
+const priorityConfig: Record<string, { label: string; color: string; bg: string }> = {
+  high: { label: 'High Impact', color: '#EF4444', bg: '#FEE2E2' },
+  medium: { label: 'Medium Impact', color: '#F59E0B', bg: '#FEF3C7' },
+  low: { label: 'Low Impact', color: '#10B981', bg: '#D1FAF0' },
+};
 
 export default function ReadinessScorePage() {
   const { data: readiness, isLoading } = useQuery<ReadinessScore>({
@@ -158,189 +189,224 @@ export default function ReadinessScorePage() {
   if (!readiness) return null;
 
   const score = readiness.overall;
-  const color = getReadinessColor(score);
 
   const factors = [
-    { label: 'Academic Performance', value: readiness.academicPerformance, icon: BarChart2 },
-    { label: 'Attendance', value: readiness.attendance, icon: CalendarCheck },
-    { label: 'Syllabus Coverage', value: readiness.syllabusConverage, icon: BookOpen },
-    { label: 'Study Consistency', value: readiness.studyConsistency, icon: Clock },
-    { label: 'Past Exam Performance', value: readiness.pastExamPerformance, icon: FileText },
+    { label: 'Academic Performance', value: readiness.academicPerformance, icon: BarChartIcon },
+    { label: 'Attendance', value: readiness.attendance, icon: CalendarCheckIcon },
+    { label: 'Syllabus Coverage', value: readiness.syllabusConverage, icon: BookOpenIcon },
+    { label: 'Study Consistency', value: readiness.studyConsistency, icon: ClockIcon },
+    { label: 'Past Exam Performance', value: readiness.pastExamPerformance, icon: FileTextIcon },
   ];
 
-  const priorityConfig: Record<string, { label: string; color: string; bg: string }> = {
-    high: { label: 'High Impact', color: '#EF4444', bg: '#FEE2E2' },
-    medium: { label: 'Medium Impact', color: '#F59E0B', bg: '#FEF3C7' },
-    low: { label: 'Low Impact', color: '#10B981', bg: '#D1FAF0' },
-  };
-
   return (
-    <motion.div variants={stagger} initial="hidden" animate="show" className="space-y-6 max-w-5xl">
+    <motion.div variants={stagger} initial="hidden" animate="show">
+      <Box sx={{ maxWidth: 960, display: 'flex', flexDirection: 'column', gap: 3 }}>
 
-      {/* Score + Dimensions */}
-      <motion.div variants={fadeUp} className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Large score display */}
-        <div className="rounded-[20px] p-8 flex flex-col items-center justify-center gap-4"
-          style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', boxShadow: 'var(--shadow-sm)' }}>
-          <p className="text-[14px] font-semibold text-[var(--color-text-secondary)] tracking-wide">Overall Readiness</p>
-          <AnimatedDonut score={score} size={180} />
-          <p className="text-[13px] text-[var(--color-text-secondary)] text-center leading-relaxed max-w-[220px]">
-            {readiness.aiExplanation.slice(0, 100)}...
-          </p>
-        </div>
+        {/* Score + Dimensions */}
+        <motion.div variants={fadeUp}>
+          <Grid container spacing={3}>
+            {/* Overall score donut */}
+            <Grid size={{ xs: 12, lg: 4 }}>
+              <Card elevation={2} sx={{ borderRadius: '20px', height: '100%' }}>
+                <CardContent sx={{ p: 4, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, justifyContent: 'center', height: '100%' }}>
+                  <Typography variant="body2" sx={{ fontWeight: 600, letterSpacing: 0.5 }} color="text.secondary">
+                    Overall Readiness
+                  </Typography>
+                  <AnimatedDonut score={score} size={180} />
+                  <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', lineHeight: 1.6, maxWidth: 220 }}>
+                    {readiness.aiExplanation.slice(0, 100)}...
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Grid>
 
-        {/* Dimension bars */}
-        <div className="lg:col-span-2 rounded-[20px] p-6"
-          style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', boxShadow: 'var(--shadow-sm)' }}>
-          <h3 className="text-[16px] font-bold text-[var(--color-text)] mb-6">Readiness Dimensions</h3>
-          <div className="space-y-5">
-            {factors.map(f => (
-              <DimensionBar key={f.label} label={f.label} value={f.value} icon={f.icon} />
-            ))}
-          </div>
-        </div>
-      </motion.div>
+            {/* Dimension bars */}
+            <Grid size={{ xs: 12, lg: 8 }}>
+              <Card elevation={2} sx={{ borderRadius: '20px', height: '100%' }}>
+                <CardContent sx={{ p: 3 }}>
+                  <Typography variant="h6" sx={{ fontWeight: 700 ,  mb: 3 }}>Readiness Dimensions</Typography>
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+                    {factors.map(f => (
+                      <DimensionBar key={f.label} label={f.label} value={f.value} icon={f.icon} />
+                    ))}
+                  </Box>
+                </CardContent>
+              </Card>
+            </Grid>
+          </Grid>
+        </motion.div>
 
-      {/* Subject grid */}
-      <motion.div variants={fadeUp}>
-        <div className="rounded-[20px] p-6"
-          style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', boxShadow: 'var(--shadow-sm)' }}>
-          <h3 className="text-[16px] font-bold text-[var(--color-text)] mb-5">Subject-wise Readiness</h3>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {readiness.subjectWise.map(s => {
-              const subColor = getSubjectColor(s.subjectName);
-              const levelCfg = READINESS_LEVEL_CONFIG[s.level];
-              return (
-                <div key={s.subjectId}
-                  className="rounded-[16px] p-4 flex flex-col items-center gap-3"
-                  style={{ background: 'var(--color-surface-2)', border: '1px solid var(--color-border)' }}>
-                  {/* Small ring chart */}
-                  <div className="relative" style={{ width: 64, height: 64 }}>
-                    <svg width="64" height="64" viewBox="0 0 64 64" style={{ transform: 'rotate(-90deg)' }}>
-                      <circle cx="32" cy="32" r="26" fill="none" stroke="var(--color-border)" strokeWidth="6" />
-                      <circle
-                        cx="32" cy="32" r="26"
-                        fill="none"
-                        stroke={subColor}
-                        strokeWidth="6"
-                        strokeLinecap="round"
-                        strokeDasharray={String(2 * Math.PI * 26)}
-                        strokeDashoffset={String(2 * Math.PI * 26 * (1 - s.score / 100))}
-                        style={{ transition: 'stroke-dashoffset 0.8s ease' }}
-                      />
-                    </svg>
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <span className="text-[14px] font-bold" style={{ color: subColor }}>{s.score}</span>
-                    </div>
-                  </div>
-                  <p className="text-[12px] font-semibold text-[var(--color-text)] text-center leading-tight truncate w-full text-center">
-                    {s.subjectName.split(' ')[0]}
-                  </p>
-                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full"
-                    style={{ color: levelCfg.color, background: levelCfg.bg }}>
-                    {levelCfg.label}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </motion.div>
+        {/* Subject-wise cards */}
+        <motion.div variants={fadeUp}>
+          <Card elevation={2} sx={{ borderRadius: '20px' }}>
+            <CardContent sx={{ p: 3 }}>
+              <Typography variant="h6" sx={{ fontWeight: 700 ,  mb: 2.5 }}>Subject-wise Readiness</Typography>
+              <Grid container spacing={2}>
+                {readiness.subjectWise.map(s => {
+                  const subColor = getSubjectColor(s.subjectName);
+                  const levelCfg = READINESS_LEVEL_CONFIG[s.level];
+                  return (
+                    <Grid size={{ xs: 6, md: 4, lg: 3 }} key={s.subjectId}>
+                      <Card variant="outlined" sx={{ borderRadius: '16px', p: 2, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1.5 }}>
+                        {/* Small ring */}
+                        <Box sx={{ position: 'relative', width: 64, height: 64 }}>
+                          <svg width="64" height="64" viewBox="0 0 64 64" style={{ transform: 'rotate(-90deg)' }}>
+                            <circle cx="32" cy="32" r="26" fill="none" stroke="#E5E7EB" strokeWidth="6" />
+                            <circle
+                              cx="32" cy="32" r="26"
+                              fill="none"
+                              stroke={subColor}
+                              strokeWidth="6"
+                              strokeLinecap="round"
+                              strokeDasharray={String(2 * Math.PI * 26)}
+                              strokeDashoffset={String(2 * Math.PI * 26 * (1 - s.score / 100))}
+                              style={{ transition: 'stroke-dashoffset 0.8s ease' }}
+                            />
+                          </svg>
+                          <Box sx={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <Typography sx={{ fontSize: 14, fontWeight: 700, color: subColor }}>{s.score}</Typography>
+                          </Box>
+                        </Box>
+                        <Typography variant="caption" sx={{ fontWeight: 600 ,  textAlign: 'center', lineHeight: 1.3 }} noWrap>
+                          {s.subjectName.split(' ')[0]}
+                        </Typography>
+                        <Chip
+                          label={levelCfg.label}
+                          size="small"
+                          sx={{ bgcolor: levelCfg.bg, color: levelCfg.color, fontWeight: 700, fontSize: 10, height: 20 }}
+                        />
+                        <LinearProgress
+                          variant="determinate"
+                          value={s.score}
+                          sx={{
+                            width: '100%', height: 4, borderRadius: 2,
+                            bgcolor: 'action.hover',
+                            '& .MuiLinearProgress-bar': { bgcolor: subColor, borderRadius: 2 },
+                          }}
+                        />
+                      </Card>
+                    </Grid>
+                  );
+                })}
+              </Grid>
+            </CardContent>
+          </Card>
+        </motion.div>
 
-      {/* AI Insights + Suggestions */}
-      <motion.div variants={fadeUp} className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* AI Explanation */}
-        <div className="rounded-[20px] p-6"
-          style={{
-            background: 'var(--color-surface)',
-            border: '1px solid var(--color-border)',
-            borderLeft: '3px solid var(--color-primary)',
-            boxShadow: 'var(--shadow-sm)',
-          }}>
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-9 h-9 rounded-[10px] flex items-center justify-center"
-              style={{ background: 'var(--gradient-primary)' }}>
-              <Lightbulb className="h-4 w-4 text-white" />
-            </div>
-            <h3 className="text-[15px] font-bold text-[var(--color-text)]">AI Insights</h3>
-          </div>
-          <p className="text-[13px] text-[var(--color-text-secondary)] leading-relaxed">
-            {readiness.aiExplanation}
-          </p>
-        </div>
+        {/* AI Insights + Recommendations */}
+        <motion.div variants={fadeUp}>
+          <Grid container spacing={3}>
+            {/* AI Explanation */}
+            <Grid size={{ xs: 12, lg: 6 }}>
+              <Card elevation={2} sx={{ borderRadius: '20px', borderLeft: '3px solid #6366F1', height: '100%' }}>
+                <CardContent sx={{ p: 3 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
+                    <Box
+                      sx={{
+                        width: 36, height: 36, borderRadius: '10px',
+                        background: 'linear-gradient(135deg,#6366F1,#818CF8)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      }}
+                    >
+                      <LightbulbIcon sx={{ color: '#fff', fontSize: 18 }} />
+                    </Box>
+                    <Typography variant="h6" sx={{ fontWeight: 700 }}>AI Insights</Typography>
+                  </Box>
+                  <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.7 }}>
+                    {readiness.aiExplanation}
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Grid>
 
-        {/* Suggestions */}
-        <div className="rounded-[20px] p-6"
-          style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', boxShadow: 'var(--shadow-sm)' }}>
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-9 h-9 rounded-[10px] flex items-center justify-center"
-              style={{ background: 'var(--gradient-success)' }}>
-              <Target className="h-4 w-4 text-white" />
-            </div>
-            <h3 className="text-[15px] font-bold text-[var(--color-text)]">Recommendations</h3>
-          </div>
-          <div className="space-y-3">
-            {readiness.suggestions.slice(0, 4).map(s => {
-              const cfg = priorityConfig[s.priority];
-              return (
-                <div key={s.id} className="flex items-start gap-3 p-3 rounded-[12px]"
-                  style={{ background: 'var(--color-surface-2)' }}>
-                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full flex-shrink-0 mt-0.5"
-                    style={{ color: cfg.color, background: cfg.bg }}>
-                    {cfg.label}
-                  </span>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[12px] text-[var(--color-text)] leading-snug">{s.text}</p>
-                    <p className="text-[11px] text-[var(--color-text-muted)] mt-1">
-                      Expected impact: <span className="font-bold" style={{ color: cfg.color }}>+{s.impact} pts</span>
-                    </p>
-                  </div>
-                  <button className="flex-shrink-0 flex items-center gap-1 text-[11px] font-semibold text-[var(--color-primary)] hover:underline whitespace-nowrap">
-                    <Plus className="h-3 w-3" /> Planner
-                  </button>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </motion.div>
+            {/* Recommendations */}
+            <Grid size={{ xs: 12, lg: 6 }}>
+              <Card elevation={2} sx={{ borderRadius: '20px', height: '100%' }}>
+                <CardContent sx={{ p: 3 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
+                    <Box
+                      sx={{
+                        width: 36, height: 36, borderRadius: '10px',
+                        background: 'linear-gradient(135deg,#10B981,#34D399)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      }}
+                    >
+                      <TargetIcon sx={{ color: '#fff', fontSize: 18 }} />
+                    </Box>
+                    <Typography variant="h6" sx={{ fontWeight: 700 }}>Recommendations</Typography>
+                  </Box>
+                  <List dense disablePadding>
+                    {readiness.suggestions.slice(0, 4).map(s => {
+                      const cfg = priorityConfig[s.priority] || priorityConfig.low;
+                      return (
+                        <ListItem key={s.id} disableGutters sx={{ alignItems: 'flex-start', gap: 1.5, py: 1 }}>
+                          <Chip
+                            label={cfg.label}
+                            size="small"
+                            sx={{ bgcolor: cfg.bg, color: cfg.color, fontWeight: 700, fontSize: 10, height: 20, mt: 0.25, flexShrink: 0 }}
+                          />
+                          <ListItemText
+                            primary={s.text}
+                            secondary={`Expected impact: +${s.impact} pts`}
+                            slotProps={{
+                              primary: { variant: 'body2', sx: { fontSize: 12, lineHeight: 1.4 } },
+                              secondary: { variant: 'caption', sx: { color: cfg.color, fontWeight: 700 } },
+                            }}
+                          />
+                        </ListItem>
+                      );
+                    })}
+                  </List>
+                </CardContent>
+              </Card>
+            </Grid>
+          </Grid>
+        </motion.div>
 
-      {/* History chart */}
-      <motion.div variants={fadeUp}>
-        <div className="rounded-[20px] p-6"
-          style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', boxShadow: 'var(--shadow-sm)' }}>
-          <div className="flex items-center gap-3 mb-5">
-            <div className="w-9 h-9 rounded-[10px] flex items-center justify-center"
-              style={{ background: 'linear-gradient(135deg, #3B82F6, #60A5FA)' }}>
-              <TrendingUp className="h-4 w-4 text-white" />
-            </div>
-            <h3 className="text-[15px] font-bold text-[var(--color-text)]">Score History</h3>
-          </div>
-          <ResponsiveContainer width="100%" height={200}>
-            <LineChart data={readiness.history}>
-              <defs>
-                <linearGradient id="scoreGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="var(--color-primary)" stopOpacity={0.15} />
-                  <stop offset="95%" stopColor="var(--color-primary)" stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" vertical={false} />
-              <XAxis dataKey="month" tick={{ fontSize: 11, fill: 'var(--color-text-secondary)' }} axisLine={false} tickLine={false} />
-              <YAxis domain={[0, 100]} tick={{ fontSize: 11, fill: 'var(--color-text-secondary)' }} axisLine={false} tickLine={false} tickFormatter={v => `${v}`} />
-              <Tooltip content={<GlassTooltip />} />
-              <Line
-                type="monotone"
-                dataKey="score"
-                stroke="var(--color-primary)"
-                strokeWidth={2.5}
-                dot={{ fill: 'var(--color-primary)', r: 4, strokeWidth: 2, stroke: 'var(--color-surface)' }}
-                activeDot={{ r: 6, fill: 'var(--color-primary)', strokeWidth: 2, stroke: 'var(--color-surface)' }}
-              />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
-      </motion.div>
+        {/* Score history chart */}
+        <motion.div variants={fadeUp}>
+          <Card elevation={2} sx={{ borderRadius: '20px' }}>
+            <CardContent sx={{ p: 3 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2.5 }}>
+                <Box
+                  sx={{
+                    width: 36, height: 36, borderRadius: '10px',
+                    background: 'linear-gradient(135deg,#3B82F6,#60A5FA)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}
+                >
+                  <TrendingUpIcon sx={{ color: '#fff', fontSize: 18 }} />
+                </Box>
+                <Typography variant="h6" sx={{ fontWeight: 700 }}>Score History</Typography>
+              </Box>
+              <ResponsiveContainer width="100%" height={200}>
+                <AreaChart data={readiness.history}>
+                  <defs>
+                    <linearGradient id="scoreGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#6366F1" stopOpacity={0.2} />
+                      <stop offset="95%" stopColor="#6366F1" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" vertical={false} />
+                  <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#9CA3AF' }} axisLine={false} tickLine={false} />
+                  <YAxis domain={[0, 100]} tick={{ fontSize: 11, fill: '#9CA3AF' }} axisLine={false} tickLine={false} />
+                  <Tooltip content={<GlassTooltip />} />
+                  <Area
+                    type="monotone"
+                    dataKey="score"
+                    stroke="#6366F1"
+                    strokeWidth={2.5}
+                    fill="url(#scoreGrad)"
+                    dot={{ fill: '#6366F1', r: 4, strokeWidth: 2, stroke: '#fff' }}
+                    activeDot={{ r: 6, fill: '#6366F1', strokeWidth: 2, stroke: '#fff' }}
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+        </motion.div>
 
+      </Box>
     </motion.div>
   );
 }

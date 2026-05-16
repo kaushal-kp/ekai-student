@@ -1,53 +1,52 @@
 import React from 'react';
-import { cn } from '@/lib/utils';
+import MuiCard from '@mui/material/Card';
+import MuiCardContent from '@mui/material/CardContent';
+import MuiCardHeader from '@mui/material/CardHeader';
+import Typography from '@mui/material/Typography';
 
 interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
   hover?: boolean;
   padding?: 'none' | 'sm' | 'md' | 'lg';
+  elevation?: number;
+  children?: React.ReactNode;
 }
 
-export function Card({ className, hover = false, padding = 'md', children, ...props }: CardProps) {
-  const paddingClasses = {
-    none: '',
-    sm: 'p-3',
-    md: 'p-4',
-    lg: 'p-6',
-  };
+const paddingMap = { none: 0, sm: 1.5, md: 2, lg: 3 };
+
+export function Card({ hover, padding = 'md', children, style, ...props }: CardProps) {
+  const p = paddingMap[padding];
   return (
-    <div
-      className={cn(
-        'bg-[var(--color-surface)] rounded-[var(--radius-lg)] border border-[var(--color-border)] shadow-[var(--shadow-sm)]',
-        paddingClasses[padding],
-        hover && 'transition-shadow duration-150 hover:shadow-[var(--shadow-md)] cursor-pointer',
-        className
-      )}
-      {...props}
+    <MuiCard
+      elevation={2}
+      sx={{
+        borderRadius: '16px',
+        p,
+        cursor: hover ? 'pointer' : undefined,
+        '&:hover': hover ? { boxShadow: 4 } : undefined,
+      }}
+      {...(props as any)}
     >
       {children}
-    </div>
+    </MuiCard>
   );
 }
 
 export function CardHeader({ className, children, ...props }: React.HTMLAttributes<HTMLDivElement>) {
   return (
-    <div className={cn('flex items-center justify-between mb-3', className)} {...props}>
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }} {...props}>
       {children}
     </div>
   );
 }
 
-export function CardTitle({ className, children, ...props }: React.HTMLAttributes<HTMLHeadingElement>) {
+export function CardTitle({ children, ...props }: React.HTMLAttributes<HTMLHeadingElement>) {
   return (
-    <h3 className={cn('font-semibold text-[var(--color-text)] text-base', className)} {...props}>
+    <Typography variant="subtitle1" fontWeight={600} component="h3" {...(props as any)}>
       {children}
-    </h3>
+    </Typography>
   );
 }
 
-export function CardContent({ className, children, ...props }: React.HTMLAttributes<HTMLDivElement>) {
-  return (
-    <div className={cn(className)} {...props}>
-      {children}
-    </div>
-  );
+export function CardContent({ children, ...props }: React.HTMLAttributes<HTMLDivElement>) {
+  return <div {...props}>{children}</div>;
 }

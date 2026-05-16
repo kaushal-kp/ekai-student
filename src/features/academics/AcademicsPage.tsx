@@ -2,11 +2,24 @@ import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { BookOpen, Users, TrendingUp, ChevronRight, Search } from 'lucide-react';
+import { Search, ChevronRight } from 'lucide-react';
+import {
+  Box,
+  Card,
+  CardContent,
+  Chip,
+  Grid,
+  InputAdornment,
+  Skeleton,
+  Stack,
+  TextField,
+  ToggleButton,
+  ToggleButtonGroup,
+  Typography,
+} from '@mui/material';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { ProgressBar } from '@/components/shared/ProgressBar';
 import { ROUTES } from '@/lib/constants';
-import { formatPercent } from '@/lib/formatters';
 import api from '@/lib/api';
 import { Subject } from '@/types/models';
 import { SubjectStatus } from '@/types/enums';
@@ -28,10 +41,10 @@ function getSubjectStyle(name: string) {
   return { color: '#6C63FF', gradient: 'linear-gradient(135deg, #6C63FF, #9C8FFF)' };
 }
 
-const STATUS_CONFIG: Record<SubjectStatus, { label: string; color: string; bg: string }> = {
-  [SubjectStatus.ON_TRACK]: { label: 'On Track', color: '#10B981', bg: '#D1FAF0' },
-  [SubjectStatus.NEEDS_ATTENTION]: { label: 'Needs Attention', color: '#F59E0B', bg: '#FEF3C7' },
-  [SubjectStatus.AT_RISK]: { label: 'At Risk', color: '#EF4444', bg: '#FEE2E2' },
+const STATUS_CONFIG: Record<SubjectStatus, { label: string; color: string; bgcolor: string }> = {
+  [SubjectStatus.ON_TRACK]: { label: 'On Track', color: '#16A34A', bgcolor: '#F0FDF4' },
+  [SubjectStatus.NEEDS_ATTENTION]: { label: 'Needs Attention', color: '#D97706', bgcolor: '#FFFBEB' },
+  [SubjectStatus.AT_RISK]: { label: 'At Risk', color: '#DC2626', bgcolor: '#FEF2F2' },
 };
 
 const stagger = { hidden: {}, show: { transition: { staggerChildren: 0.07 } } };
@@ -41,11 +54,13 @@ type FilterType = 'all' | SubjectStatus;
 
 function SkeletonGrid() {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+    <Grid container spacing={2.5}>
       {[1, 2, 3, 4, 5, 6].map(i => (
-        <div key={i} className="skeleton rounded-[20px] h-[200px]" />
+        <Grid key={i} size={{ xs: 12, md: 6, xl: 4 }}>
+          <Skeleton variant="rounded" height={200} sx={{ borderRadius: '20px' }} />
+        </Grid>
       ))}
-    </div>
+    </Grid>
   );
 }
 
@@ -74,182 +89,294 @@ export default function AcademicsPage() {
     : 0;
 
   return (
-    <div className="max-w-6xl space-y-6">
+    <Stack spacing={4} sx={{ maxWidth: '1200px' }}>
       <PageHeader title="Subjects" subtitle={`${subjects?.length || 0} subjects · Academic Year 2024–25`} />
 
       {/* Overview summary */}
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <Grid container spacing={2.5}>
           {[
-            { label: 'Overall Avg', value: `${avgScore}%`, gradient: 'var(--gradient-primary)', icon: '📊' },
+            { label: 'Overall Avg', value: `${avgScore}%`, gradient: 'linear-gradient(135deg, #6366F1, #818CF8)', icon: '📊' },
+            { label: 'Total Subjects', value: subjects?.length || 0, gradient: 'linear-gradient(135deg, #6366F1, #818CF8)', icon: '📚' },
             { label: 'On Track', value: onTrack.length, gradient: 'linear-gradient(135deg, #10B981, #34D399)', icon: '✅' },
-            { label: 'Needs Attention', value: needsAttention.length, gradient: 'linear-gradient(135deg, #F59E0B, #FCD34D)', icon: '⚡' },
             { label: 'At Risk', value: atRisk.length, gradient: 'linear-gradient(135deg, #EF4444, #F87171)', icon: '⚠️' },
           ].map((s, i) => (
-            <motion.div
-              key={s.label}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.07 }}
-              className="rounded-[16px] p-4 flex items-center gap-3"
-              style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)' }}
-            >
-              <div className="w-10 h-10 rounded-[10px] flex items-center justify-center flex-shrink-0"
-                style={{ background: s.gradient }}>
-                <span className="text-[18px]">{s.icon}</span>
-              </div>
-              <div>
-                <p className="text-[22px] font-bold text-[var(--color-text)] leading-tight">{s.value}</p>
-                <p className="text-[11px] text-[var(--color-text-muted)]">{s.label}</p>
-              </div>
-            </motion.div>
+            <Grid key={s.label} size={{ xs: 6, md: 3 }}>
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.07 }}
+              >
+                <Card elevation={2} sx={{ borderRadius: '16px' }}>
+                  <CardContent sx={{ p: 2.5 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                      <Box
+                        sx={{
+                          width: 40,
+                          height: 40,
+                          borderRadius: '10px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          background: s.gradient,
+                          flexShrink: 0,
+                          fontSize: '18px',
+                        }}
+                      >
+                        {s.icon}
+                      </Box>
+                      <Box>
+                        <Typography sx={{ fontSize: '22px', fontWeight: 800, color: 'text.primary', lineHeight: 1 }}>
+                          {s.value}
+                        </Typography>
+                        <Typography variant="caption" sx={{ color: 'text.secondary' }}>{s.label}</Typography>
+                      </Box>
+                    </Box>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            </Grid>
           ))}
-        </div>
+        </Grid>
       </motion.div>
 
       {/* Filter + Search bar */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
-        <div className="flex items-center gap-2 p-1 rounded-[12px] bg-[var(--color-surface-2)] border border-[var(--color-border)]">
-          {([['all', 'All Subjects'], [SubjectStatus.ON_TRACK, 'On Track'], [SubjectStatus.NEEDS_ATTENTION, 'Needs Attention'], [SubjectStatus.AT_RISK, 'At Risk']] as [FilterType, string][]).map(([v, l]) => (
-            <button
-              key={v}
-              onClick={() => setFilter(v)}
-              className="px-3 py-1.5 rounded-[9px] text-[12px] font-medium transition-all"
-              style={filter === v ? {
-                background: 'var(--color-surface)',
-                color: 'var(--color-primary)',
-                boxShadow: 'var(--shadow-sm)',
-              } : {
-                color: 'var(--color-text-secondary)',
-              }}
-            >
-              {l}
-            </button>
-          ))}
-        </div>
+      <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, alignItems: { xs: 'flex-start', sm: 'center' }, gap: 2 }}>
+        <ToggleButtonGroup
+          value={filter}
+          exclusive
+          onChange={(_, val) => val !== null && setFilter(val)}
+          size="small"
+          sx={{
+            bgcolor: 'grey.100',
+            borderRadius: '12px',
+            p: 0.5,
+            border: '1px solid',
+            borderColor: 'divider',
+            '& .MuiToggleButton-root': {
+              border: 'none',
+              borderRadius: '9px !important',
+              px: 2,
+              py: 0.75,
+              fontSize: '0.75rem',
+              fontWeight: 600,
+              color: 'text.secondary',
+              '&.Mui-selected': {
+                bgcolor: 'background.paper',
+                color: 'primary.main',
+                boxShadow: 1,
+              },
+            },
+          }}
+        >
+          <ToggleButton value="all">All Subjects</ToggleButton>
+          <ToggleButton value={SubjectStatus.ON_TRACK}>On Track</ToggleButton>
+          <ToggleButton value={SubjectStatus.NEEDS_ATTENTION}>Needs Attention</ToggleButton>
+          <ToggleButton value={SubjectStatus.AT_RISK}>At Risk</ToggleButton>
+        </ToggleButtonGroup>
 
-        <div className="relative ml-auto">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[var(--color-text-muted)]" />
-          <input
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            placeholder="Search subjects..."
-            className="pl-8 pr-3 py-2 rounded-[10px] border border-[var(--color-border)] bg-[var(--color-surface)] text-[13px] text-[var(--color-text)] placeholder:text-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-primary)] w-48"
-          />
-        </div>
-      </div>
+        <TextField
+          size="small"
+          placeholder="Search subjects..."
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          sx={{ ml: { sm: 'auto' }, width: { xs: '100%', sm: 220 } }}
+          slotProps={{
+            input: {
+              startAdornment: (
+                <InputAdornment position="start">
+                  <Search size={14} color="#9CA3AF" />
+                </InputAdornment>
+              ),
+            },
+          }}
+        />
+      </Box>
 
       {/* Subject grid */}
       {isLoading ? <SkeletonGrid /> : (
-        <motion.div
-          variants={stagger}
-          initial="hidden"
-          animate="show"
-          className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4"
-        >
-          <AnimatePresence mode="popLayout">
-            {filtered.map(subject => {
-              const style = getSubjectStyle(subject.name);
-              const status = STATUS_CONFIG[subject.status];
-              return (
-                <motion.div
-                  key={subject.id}
-                  variants={fadeUp}
-                  layout
-                  exit={{ opacity: 0, scale: 0.95 }}
-                  whileHover={{ y: -4 }}
-                  onClick={() => navigate(`/academics/${subject.id}`)}
-                  className="rounded-[20px] overflow-hidden cursor-pointer group shadow-[var(--shadow-sm)] hover:shadow-[var(--shadow-md)] transition-shadow"
-                  style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)' }}
-                >
-                  {/* Colored header band */}
-                  <div className="h-2 w-full" style={{ background: style.gradient }} />
-
-                  <div className="p-5">
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-[12px] flex items-center justify-center text-white font-bold text-[15px] flex-shrink-0"
-                          style={{ background: style.gradient }}>
-                          {subject.name[0]}
-                        </div>
-                        <div>
-                          <p className="text-[14px] font-bold text-[var(--color-text)]">{subject.name}</p>
-                          <p className="text-[11px] text-[var(--color-text-muted)]">{subject.code}</p>
-                        </div>
-                      </div>
-                      <span
-                        className="text-[11px] font-semibold px-2.5 py-1 rounded-full flex-shrink-0"
-                        style={{ background: status.bg, color: status.color }}
+        <motion.div variants={stagger} initial="hidden" animate="show">
+          <Grid container spacing={2.5}>
+            <AnimatePresence mode="popLayout">
+              {filtered.map(subject => {
+                const style = getSubjectStyle(subject.name);
+                const status = STATUS_CONFIG[subject.status];
+                return (
+                  <Grid key={subject.id} size={{ xs: 12, md: 6, xl: 4 }}>
+                    <motion.div
+                      variants={fadeUp}
+                      layout
+                      exit={{ opacity: 0, scale: 0.95 }}
+                      whileHover={{ y: -4 }}
+                      style={{ height: '100%' }}
+                    >
+                      <Card
+                        elevation={2}
+                        onClick={() => navigate(`/academics/${subject.id}`)}
+                        sx={{
+                          borderRadius: '20px',
+                          cursor: 'pointer',
+                          height: '100%',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          overflow: 'hidden',
+                          transition: 'box-shadow 0.2s',
+                          '&:hover': { boxShadow: 4 },
+                        }}
                       >
-                        {status.label}
-                      </span>
-                    </div>
+                        {/* Colored top strip */}
+                        <Box sx={{ height: 4, background: style.gradient }} />
 
-                    {/* Teacher */}
-                    <div className="flex items-center gap-1.5 mb-4">
-                      <div className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-white flex-shrink-0"
-                        style={{ background: style.gradient }}>
-                        {subject.teacherName[0]}
-                      </div>
-                      <span className="text-[12px] text-[var(--color-text-secondary)]">{subject.teacherName}</span>
-                    </div>
+                        <CardContent sx={{ p: 2.5, flex: 1, display: 'flex', flexDirection: 'column' }}>
+                          {/* Header */}
+                          <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', mb: 2 }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                              <Box
+                                sx={{
+                                  width: 40,
+                                  height: 40,
+                                  borderRadius: '12px',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  background: style.gradient,
+                                  color: 'white',
+                                  fontWeight: 700,
+                                  fontSize: '15px',
+                                  flexShrink: 0,
+                                }}
+                              >
+                                {subject.name[0]}
+                              </Box>
+                              <Box>
+                                <Typography sx={{ fontSize: '14px', fontWeight: 700, color: 'text.primary' }}>
+                                  {subject.name}
+                                </Typography>
+                                <Chip
+                                  label={subject.code}
+                                  size="small"
+                                  sx={{ height: 18, fontSize: '0.6875rem', bgcolor: 'grey.100', color: 'text.secondary' }}
+                                />
+                              </Box>
+                            </Box>
+                            <Chip
+                              label={status.label}
+                              size="small"
+                              sx={{
+                                bgcolor: status.bgcolor,
+                                color: status.color,
+                                fontWeight: 600,
+                                fontSize: '0.6875rem',
+                                flexShrink: 0,
+                              }}
+                            />
+                          </Box>
 
-                    {/* Syllabus progress */}
-                    <div className="space-y-3">
-                      <div>
-                        <div className="flex items-center justify-between text-[12px] mb-1.5">
-                          <span className="text-[var(--color-text-secondary)]">Syllabus Progress</span>
-                          <span className="font-semibold" style={{ color: style.color }}>{subject.syllabusProgress}%</span>
-                        </div>
-                        <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--color-surface-2)' }}>
-                          <motion.div
-                            initial={{ width: 0 }}
-                            animate={{ width: `${subject.syllabusProgress}%` }}
-                            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1], delay: 0.2 }}
-                            className="h-full rounded-full"
-                            style={{ background: style.gradient }}
-                          />
-                        </div>
-                      </div>
+                          {/* Teacher */}
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+                            <Box
+                              sx={{
+                                width: 24,
+                                height: 24,
+                                borderRadius: '50%',
+                                background: style.gradient,
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                color: 'white',
+                                fontSize: '10px',
+                                fontWeight: 700,
+                                flexShrink: 0,
+                              }}
+                            >
+                              {subject.teacherName[0]}
+                            </Box>
+                            <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                              {subject.teacherName}
+                            </Typography>
+                          </Box>
 
-                      {/* Stats row */}
-                      <div className="grid grid-cols-3 gap-2 pt-1">
-                        {[
-                          { label: 'Last Score', value: subject.lastScore !== undefined ? `${subject.lastScore}%` : '—' },
-                          { label: 'Average', value: subject.averageScore !== undefined ? `${subject.averageScore}%` : '—' },
-                          {
-                            label: 'Attendance',
-                            value: `${subject.attendancePercent}%`,
-                            color: subject.attendancePercent >= 75 ? '#10B981' : '#EF4444',
-                          },
-                        ].map(stat => (
-                          <div key={stat.label} className="text-center p-2 rounded-[8px]" style={{ background: 'var(--color-surface-2)' }}>
-                            <p className="text-[13px] font-bold" style={{ color: stat.color || 'var(--color-text)' }}>{stat.value}</p>
-                            <p className="text-[10px] text-[var(--color-text-muted)] mt-0.5">{stat.label}</p>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
+                          {/* Progress */}
+                          <Box sx={{ mb: 2 }}>
+                            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.75 }}>
+                              <Typography variant="caption" sx={{ color: 'text.secondary' }}>Syllabus Progress</Typography>
+                              <Typography variant="caption" sx={{ fontWeight: 600, color: style.color }}>
+                                {subject.syllabusProgress}%
+                              </Typography>
+                            </Box>
+                            <ProgressBar value={subject.syllabusProgress} color={style.color} height={6} />
+                          </Box>
 
-                  <div className="px-5 pb-3 flex items-center justify-between">
-                    <span className="text-[11px] text-[var(--color-text-muted)]">View details</span>
-                    <ChevronRight className="h-4 w-4 text-[var(--color-text-muted)] group-hover:text-[var(--color-primary)] transition-colors group-hover:translate-x-0.5 transition-transform" />
-                  </div>
-                </motion.div>
-              );
-            })}
-          </AnimatePresence>
+                          {/* Stats row */}
+                          <Grid container spacing={1} sx={{ mb: 1 }}>
+                            {[
+                              { label: 'Last Score', value: subject.lastScore !== undefined ? `${subject.lastScore}%` : '—', color: undefined },
+                              { label: 'Average', value: subject.averageScore !== undefined ? `${subject.averageScore}%` : '—', color: undefined },
+                              {
+                                label: 'Attendance',
+                                value: `${subject.attendancePercent}%`,
+                                color: subject.attendancePercent >= 75 ? '#10B981' : '#EF4444',
+                              },
+                            ].map(stat => (
+                              <Grid key={stat.label} size={{ xs: 4 }}>
+                                <Box
+                                  sx={{
+                                    textAlign: 'center',
+                                    p: 1,
+                                    borderRadius: '8px',
+                                    bgcolor: 'grey.50',
+                                  }}
+                                >
+                                  <Typography
+                                    sx={{
+                                      fontSize: '13px',
+                                      fontWeight: 700,
+                                      color: stat.color || 'text.primary',
+                                    }}
+                                  >
+                                    {stat.value}
+                                  </Typography>
+                                  <Typography sx={{ fontSize: '10px', color: 'text.secondary', mt: 0.25 }}>
+                                    {stat.label}
+                                  </Typography>
+                                </Box>
+                              </Grid>
+                            ))}
+                          </Grid>
+                        </CardContent>
+
+                        {/* Footer */}
+                        <Box
+                          sx={{
+                            px: 2.5,
+                            pb: 1.5,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                          }}
+                        >
+                          <Typography variant="caption" sx={{ color: 'text.secondary' }}>View details</Typography>
+                          <ChevronRight size={16} color="#9CA3AF" />
+                        </Box>
+                      </Card>
+                    </motion.div>
+                  </Grid>
+                );
+              })}
+            </AnimatePresence>
+          </Grid>
         </motion.div>
       )}
 
       {filtered.length === 0 && !isLoading && (
-        <div className="flex flex-col items-center justify-center py-16">
-          <span className="text-[56px] mb-4">📚</span>
-          <p className="text-[16px] font-semibold text-[var(--color-text)]">No subjects found</p>
-          <p className="text-[13px] text-[var(--color-text-muted)] mt-1">Try adjusting your filter or search</p>
-        </div>
+        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', py: 10 }}>
+          <Typography sx={{ fontSize: '56px', mb: 2, lineHeight: 1 }}>📚</Typography>
+          <Typography variant="h6" sx={{ fontWeight: 600 }}>No subjects found</Typography>
+          <Typography variant="body2" sx={{ color: 'text.secondary', mt: 0.5 }}>
+            Try adjusting your filter or search
+          </Typography>
+        </Box>
       )}
-    </div>
+    </Stack>
   );
 }

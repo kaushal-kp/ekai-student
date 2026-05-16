@@ -31,7 +31,7 @@ export default function SecurityPage() {
     },
   });
 
-  if (isLoading) return <LoadingSpinner className="mt-16" />;
+  if (isLoading) return <LoadingSpinner />;
 
   return (
     <div className="max-w-2xl">
