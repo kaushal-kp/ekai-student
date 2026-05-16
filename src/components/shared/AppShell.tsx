@@ -27,7 +27,6 @@ export function AppShell() {
           flexDirection: 'column',
           minWidth: 0,
           overflow: 'hidden',
-          ml: { lg: `${SIDEBAR_WIDTH}px` },
         }}
       >
         <TopBar onMenuClick={() => setMobileOpen(true)} sidebarWidth={SIDEBAR_WIDTH} />
